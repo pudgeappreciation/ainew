@@ -5,8 +5,10 @@ mod responder;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use drawer::{start_drawer, PingDrawer};
-use responder::{start_responder, ResponseReceiver};
+use drawer::start_drawer;
+use global::channels::respond_to_message::{self, RespondToMessageReceiver};
+use global::channels::wake_drawer::{self, WakeDrawer};
+use responder::start_responder;
 use sqlx::{Pool, Sqlite};
 use tokio;
 
@@ -39,8 +41,8 @@ async fn get_database() -> Pool<Sqlite> {
 
 pub struct Bot {
     pub database: Pool<Sqlite>,
-    pub ping_drawer: PingDrawer,
-    response_receiver: ResponseReceiver,
+    pub ping_drawer: WakeDrawer,
+    response_receiver: RespondToMessageReceiver,
     is_loop_running: AtomicBool,
 }
 
@@ -51,7 +53,7 @@ impl EventHandler for Bot {
             match command.data.name.as_str() {
                 "draw" => {
                     commands::draw::queue(&self.database, ctx, command).await;
-                    self.ping_drawer.ping();
+                    self.ping_drawer.wake();
                 }
                 _ => println!("Command not registered"),
             };
@@ -101,13 +103,14 @@ async fn main() {
     let intents = GatewayIntents::non_privileged();
 
     let database = get_database().await;
-    let (sender, response_receiver) = responder::make_channel();
-    let ping_drawer = start_drawer(database.clone(), sender);
+    let (sender, response_receiver) = respond_to_message::make();
+    let (drawer_sender, drawer_receiver) = wake_drawer::make();
+    start_drawer(database.clone(), drawer_receiver, sender);
 
     let mut client = Client::builder(discord_token, intents)
         .event_handler(Bot {
             database: database.clone(),
-            ping_drawer: ping_drawer.clone(),
+            ping_drawer: drawer_sender.clone(),
             response_receiver,
             is_loop_running: AtomicBool::new(false),
         })

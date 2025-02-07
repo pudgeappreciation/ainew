@@ -6,20 +6,20 @@ use std::time::Duration;
 use draw::draw;
 use draw_queue::get_next_request;
 use sqlx::{Pool, Sqlite};
-use tokio::{
-    sync::watch::{self, Sender},
-    time::sleep,
+use tokio::time::sleep;
+
+use crate::global::{
+    channels::{respond_to_message::RespondToMessage, wake_drawer::WakeDrawerReceiver},
+    responses::Response,
 };
 
-use crate::{global::responses::Response, responder::ResponseSender};
-
-pub async fn draw_session(database: &Pool<Sqlite>, responder: &ResponseSender) {
+pub async fn draw_session(database: &Pool<Sqlite>, responder: &RespondToMessage) {
     while let Some(request) = get_next_request(database).await {
         if request.drawing(database).await.is_err() {
             continue;
         }
 
-        responder.send(Response::StartingDrawing {
+        responder.respond(Response::StartingDrawing {
             channel_id: request.channel_id,
             message_id: request.request_id,
             user_id: request.user_id,
@@ -27,7 +27,7 @@ pub async fn draw_session(database: &Pool<Sqlite>, responder: &ResponseSender) {
         let result = draw(&request).await;
         match result {
             Ok(response) => {
-                responder.send(Response::DrawingResponse {
+                responder.respond(Response::DrawingResponse {
                     response,
                     channel_id: request.channel_id,
                     message_id: request.request_id,
@@ -43,27 +43,15 @@ pub async fn draw_session(database: &Pool<Sqlite>, responder: &ResponseSender) {
     }
 }
 
-struct DrawerPing;
-
-#[derive(Clone)]
-pub struct PingDrawer(Sender<DrawerPing>);
-
-impl PingDrawer {
-    pub fn ping(&self) {
-        _ = self.0.send(DrawerPing);
-    }
-}
-
-pub fn start_drawer(database: Pool<Sqlite>, responder: ResponseSender) -> PingDrawer {
-    let (tx, mut watcher) = watch::channel(DrawerPing);
-
+pub fn start_drawer(
+    database: Pool<Sqlite>,
+    mut receiver: WakeDrawerReceiver,
+    responder: RespondToMessage,
+) {
     tokio::spawn(async move {
         loop {
-            watcher.borrow_and_update();
-            _ = watcher.changed().await;
+            receiver.wake().await;
             draw_session(&database, &responder).await;
         }
     });
-
-    PingDrawer(tx)
 }
