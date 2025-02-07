@@ -1,7 +1,9 @@
 mod commands;
 
-use dotenv;
-use serenity::all::{CreateInteractionResponse, CreateInteractionResponseMessage};
+use serenity::all::{
+    CreateAttachment, CreateInteractionResponse, CreateInteractionResponseMessage, EditAttachments,
+    EditInteractionResponse,
+};
 use tokio;
 
 use serenity::async_trait;
@@ -18,16 +20,30 @@ impl EventHandler for Handler {
         if let Interaction::Command(command) = interaction {
             println!("Received command interaction: {command:#?}");
 
+            let options = command.data.options();
+
             let content = match command.data.name.as_str() {
-                "draw" => Some(commands::draw::run(&command.data.options())),
+                "draw" => Some(commands::draw::run(&options)),
                 _ => None,
             };
 
             if let Some(content) = content {
-                let data = CreateInteractionResponseMessage::new().content(content);
-                let builder = CreateInteractionResponse::Message(data);
-                if let Err(why) = command.create_response(&ctx.http, builder).await {
+                let initial_message =
+                    CreateInteractionResponseMessage::new().content("**Generating image...**");
+                let initial_response = CreateInteractionResponse::Message(initial_message);
+                if let Err(why) = command.create_response(&ctx.http, initial_response).await {
                     println!("Cannot respond to slash command: {why}");
+                }
+
+                let (content, image) = content.await;
+                let mut edit = EditInteractionResponse::new().content(content);
+                if let Some(image) = image {
+                    let edit_attachments =
+                        EditAttachments::new().add(CreateAttachment::bytes(image, "image.png"));
+                    edit = edit.attachments(edit_attachments);
+                }
+                if let Err(why) = command.edit_response(&ctx.http, edit).await {
+                    println!("Cannot edit response: {why}");
                 }
             }
         }
