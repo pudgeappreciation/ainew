@@ -1,13 +1,12 @@
 mod commands;
-mod drawer;
+mod draw_task;
 mod global;
 mod responder;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use drawer::start_drawer;
 use global::channels::respond_to_message::{self, RespondToMessageReceiver};
-use global::channels::wake_drawer::{self, WakeDrawer};
+use global::channels::wake_draw_task::{self, WakeDrawTask};
 use responder::start_responder;
 use sqlx::{Pool, Sqlite};
 use tokio;
@@ -41,7 +40,7 @@ async fn get_database() -> Pool<Sqlite> {
 
 pub struct Bot {
     pub database: Pool<Sqlite>,
-    pub ping_drawer: WakeDrawer,
+    pub draw_task: WakeDrawTask,
     response_receiver: RespondToMessageReceiver,
     is_loop_running: AtomicBool,
 }
@@ -53,7 +52,7 @@ impl EventHandler for Bot {
             match command.data.name.as_str() {
                 "draw" => {
                     commands::draw::queue(&self.database, ctx, command).await;
-                    self.ping_drawer.wake();
+                    self.draw_task.wake();
                 }
                 _ => println!("Command not registered"),
             };
@@ -104,13 +103,13 @@ async fn main() {
 
     let database = get_database().await;
     let (sender, response_receiver) = respond_to_message::make();
-    let (drawer_sender, drawer_receiver) = wake_drawer::make();
-    start_drawer(database.clone(), drawer_receiver, sender);
+    let (draw_task_sender, draw_task_receiver) = wake_draw_task::make();
+    draw_task::start(database.clone(), draw_task_receiver, sender);
 
     let mut client = Client::builder(discord_token, intents)
         .event_handler(Bot {
             database: database.clone(),
-            ping_drawer: drawer_sender.clone(),
+            draw_task: draw_task_sender.clone(),
             response_receiver,
             is_loop_running: AtomicBool::new(false),
         })

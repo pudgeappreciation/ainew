@@ -9,11 +9,11 @@ use sqlx::{Pool, Sqlite};
 use tokio::time::sleep;
 
 use crate::global::{
-    channels::{respond_to_message::RespondToMessage, wake_drawer::WakeDrawerReceiver},
+    channels::{respond_to_message::RespondToMessage, wake_draw_task::WakeDrawTaskReceiver},
     responses::Response,
 };
 
-pub async fn draw_session(database: &Pool<Sqlite>, responder: &RespondToMessage) {
+async fn draw_session(database: &Pool<Sqlite>, responder: &RespondToMessage) {
     while let Some(request) = get_next_request(database).await {
         if request.drawing(database).await.is_err() {
             continue;
@@ -43,9 +43,9 @@ pub async fn draw_session(database: &Pool<Sqlite>, responder: &RespondToMessage)
     }
 }
 
-pub fn start_drawer(
+pub fn start(
     database: Pool<Sqlite>,
-    mut receiver: WakeDrawerReceiver,
+    mut receiver: WakeDrawTaskReceiver,
     responder: RespondToMessage,
 ) {
     tokio::spawn(async move {
