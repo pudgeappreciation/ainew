@@ -4,9 +4,15 @@ use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serenity::all::MessageBuilder;
+
+use serenity::all::{
+    CommandInteraction, CreateAttachment, CreateInteractionResponse,
+    CreateInteractionResponseFollowup, CreateInteractionResponseMessage, EditInteractionResponse,
+    MessageBuilder,
+};
 use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::model::application::{CommandOptionType, ResolvedOption, ResolvedValue};
+use serenity::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct DrawRequest {
@@ -61,11 +67,17 @@ impl<'a> Into<DrawRequest> for &[ResolvedOption<'a>] {
     }
 }
 
-pub async fn run<'a>(options: &[ResolvedOption<'a>]) -> (String, Option<Vec<u8>>) {
-    println!("{options:?}");
+async fn send_initial_interaction_response(ctx: &Context, command: &CommandInteraction) {
+    let initial_message = CreateInteractionResponseMessage::new().content("**Drawing image...**");
+    let initial_response = CreateInteractionResponse::Message(initial_message);
+    println!("Responding to slash command");
+    if let Err(why) = command.create_response(&ctx.http, initial_response).await {
+        println!("Cannot respond to slash command: {why}");
+    }
+}
 
-    let gen_request: DrawRequest = options.into();
-
+async fn draw(draw_request: &DrawRequest) -> Result<DrawResponse, ()> {
+    println!("Drawing image");
     let client = reqwest::ClientBuilder::new()
         .build()
         .expect("Could not create HTTP client");
@@ -73,27 +85,78 @@ pub async fn run<'a>(options: &[ResolvedOption<'a>]) -> (String, Option<Vec<u8>>
     let mut url = dotenv::var("A1111_BASE_URL").expect("Expected a URL to access A1111");
     url.push_str("/sdapi/v1/txt2img");
 
-    let request = client.post(url).json(&gen_request).build().unwrap();
+    let request = client.post(url).json(&draw_request).build().unwrap();
 
-    let response: DrawResponse = client.execute(request).await.unwrap().json().await.unwrap();
-    // println!("{}", response_string);
+    println!("Parsing response");
+    let Ok(http_response) = client.execute(request).await else {
+        return Err(());
+    };
 
-    // let respose: DrawResponse = serde_json::from_str(&response_string).unwrap();
+    let Ok(response) = http_response.json().await else {
+        return Err(());
+    };
 
+    Ok(response)
+}
+
+async fn close_initial_interaction(ctx: &Context, command: &CommandInteraction) {
+    println!("Closing command response");
     let content = MessageBuilder::new()
-        .push_bold_line_safe("Prompt:")
-        .push_codeblock_safe(gen_request.prompt, None)
-        .push_bold_line("Negative prompt:")
-        .push_codeblock_safe(gen_request.negative_prompt, None)
+        .mention(&command.user.id)
+        .push(", your drawing is complete.")
         .build();
+    let edit = EditInteractionResponse::new().content(content);
+    if let Err(why) = command.edit_response(&ctx.http, edit).await {
+        println!("Cannot edit response: {why}");
+    }
+}
 
-    let image = response
-        .images
-        .into_iter()
-        .next()
-        .map(|data| BASE64_STANDARD.decode(data).expect("Error decoding image"));
+fn final_response_message(draw_response: DrawResponse) -> CreateInteractionResponseFollowup {
+    let Some(image_string) = draw_response.images.into_iter().next() else {
+        return CreateInteractionResponseFollowup::new().content("**No image returned :/**");
+    };
 
-    (content, image)
+    let Ok(image_data) = BASE64_STANDARD.decode(image_string) else {
+        return CreateInteractionResponseFollowup::new().content("**Error decoding image :/**");
+    };
+
+    return CreateInteractionResponseFollowup::new()
+        .content("**Your drawing! :D**")
+        .add_file(CreateAttachment::bytes(image_data, "image.png"));
+}
+
+async fn send_final_response(
+    ctx: &Context,
+    command: &CommandInteraction,
+    draw_response: DrawResponse,
+) {
+    println!("Sending image");
+    let message = final_response_message(draw_response);
+    if let Err(why) = command.create_followup(&ctx.http, message).await {
+        println!("Cannot create response: {why}");
+    }
+}
+
+async fn send_failure_response(ctx: &Context, command: &CommandInteraction) {
+    let edit = EditInteractionResponse::new().content("**Drawing failed :(**");
+    if let Err(why) = command.edit_response(&ctx.http, edit).await {
+        println!("Cannot edit response: {why}");
+    }
+}
+
+pub async fn run<'a>(ctx: Context, command: CommandInteraction) {
+    send_initial_interaction_response(&ctx, &command).await;
+
+    let draw_request: DrawRequest = command.data.options().as_slice().into();
+    let draw_response = draw(&draw_request).await;
+
+    match draw_response {
+        Ok(response) => {
+            close_initial_interaction(&ctx, &command).await;
+            send_final_response(&ctx, &command, response).await
+        }
+        Err(_) => send_failure_response(&ctx, &command).await,
+    }
 }
 
 pub fn register() -> CreateCommand {
