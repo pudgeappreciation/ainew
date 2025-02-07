@@ -1,4 +1,4 @@
-mod commands;
+mod discord;
 mod draw_task;
 mod global;
 mod responder;
@@ -51,7 +51,7 @@ impl EventHandler for Bot {
         if let Interaction::Command(command) = interaction {
             match command.data.name.as_str() {
                 "draw" => {
-                    commands::draw::queue(&self.database, ctx, command).await;
+                    discord::commands::draw::queue(&self.database, ctx, command).await;
                     self.draw_task.wake();
                 }
                 _ => println!("Command not registered"),
@@ -66,7 +66,7 @@ impl EventHandler for Bot {
             let guild_id = GuildId::new(guild_id.parse().expect("Expected a valid test guild ID"));
 
             let commands = guild_id
-                .set_commands(&ctx.http, vec![commands::draw::register()])
+                .set_commands(&ctx.http, vec![discord::commands::draw::register()])
                 .await;
 
             println!("I now have the following test guild slash commands: {commands:#?}");
@@ -74,7 +74,8 @@ impl EventHandler for Bot {
 
         if dotenvy::var("APP_ENV").unwrap_or("dev".to_string()) == "production" {
             let guild_command =
-                Command::create_global_command(&ctx.http, commands::draw::register()).await;
+                Command::create_global_command(&ctx.http, discord::commands::draw::register())
+                    .await;
 
             println!("I created the following global slash command: {guild_command:#?}");
         }
