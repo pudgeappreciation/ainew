@@ -1,7 +1,6 @@
 mod discord;
 mod draw_task;
 mod global;
-mod responder;
 
 use discord::bot::Bot;
 use global::channels::respond_to_message::{self};

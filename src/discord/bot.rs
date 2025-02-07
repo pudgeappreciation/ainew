@@ -10,9 +10,9 @@ use sqlx::{Pool, Sqlite};
 
 use crate::global::channels::respond_to_message::RespondToMessageReceiver;
 use crate::global::channels::wake_draw_task::WakeDrawTask;
-use crate::responder::start_responder;
 
 use super::commands;
+use super::respond_to_message_task;
 
 pub struct Bot {
     pub database: Pool<Sqlite>,
@@ -44,7 +44,7 @@ impl EventHandler for Bot {
         println!("Cache built successfully!");
 
         if !self.is_loop_running.load(Ordering::Relaxed) {
-            start_responder(ctx.clone(), self.response_receiver.clone());
+            respond_to_message_task::start(ctx.clone(), self.response_receiver.clone());
 
             self.is_loop_running.swap(true, Ordering::Relaxed);
         }
