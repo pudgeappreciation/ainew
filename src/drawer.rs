@@ -11,7 +11,7 @@ use tokio::{
     time::sleep,
 };
 
-use crate::responder::{Response, ResponseSender};
+use crate::{global::responses::Response, responder::ResponseSender};
 
 pub async fn draw_session(database: &Pool<Sqlite>, responder: &ResponseSender) {
     while let Some(request) = get_next_request(database).await {
