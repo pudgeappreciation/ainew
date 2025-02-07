@@ -1,6 +1,6 @@
 mod commands;
-mod draw_request;
 mod drawer;
+mod global;
 mod responder;
 
 use std::sync::atomic::{AtomicBool, Ordering};

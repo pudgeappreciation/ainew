@@ -5,7 +5,7 @@ use serenity::all::{
 use serenity::prelude::*;
 use sqlx::{Pool, Sqlite};
 
-use crate::draw_request::DrawRequest;
+use crate::global::draw_request::DrawRequest;
 
 async fn send_success_response(ctx: &Context, command: &CommandInteraction) {
     let message = EditInteractionResponse::new().content("Your request has been queued");
@@ -44,7 +44,7 @@ pub async fn queue<'a>(database: &Pool<Sqlite>, ctx: Context, command: CommandIn
         return;
     };
 
-    let request = DrawRequest::create(&command, request_id);
+    let request = DrawRequest::new_from_command(&command, request_id);
     let result = request.save(database);
 
     match result.await {

@@ -4,7 +4,7 @@ use serenity::all::{
 };
 use tokio::sync::broadcast::{self, Receiver, Sender};
 
-use crate::drawer::draw::DrawResponse;
+use crate::global::draw_response::DrawResponse;
 
 #[derive(Debug, Clone)]
 pub enum Response {

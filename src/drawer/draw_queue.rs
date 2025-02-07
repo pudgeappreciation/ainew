@@ -2,7 +2,7 @@ use saturating_cast::SaturatingCast;
 use serenity::all::{ChannelId, MessageId, UserId};
 use sqlx::{Pool, Sqlite};
 
-use crate::draw_request::DrawRequest;
+use crate::global::draw_request::DrawRequest;
 
 #[derive(Debug)]
 struct DbDrawRequest {

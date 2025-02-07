@@ -18,7 +18,7 @@ pub struct DrawRequest {
 }
 
 impl DrawRequest {
-    pub fn create(command: &CommandInteraction, request_id: MessageId) -> DrawRequest {
+    pub fn new_from_command(command: &CommandInteraction, request_id: MessageId) -> DrawRequest {
         let mut request = DrawRequest {
             state: "queued".to_string(),
             prompt: "".to_string(),
