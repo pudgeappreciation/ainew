@@ -86,7 +86,7 @@ async fn draw_fake(fake_image_path: &str) -> Result<DrawResponse, ()> {
 }
 
 async fn draw(draw_request: &DrawRequest) -> Result<DrawResponse, ()> {
-    if let Ok(fake_image_path) = dotenv::var("USE_FAKE_IMAGE") {
+    if let Ok(fake_image_path) = dotenvy::var("USE_FAKE_IMAGE") {
         return draw_fake(&fake_image_path).await;
     }
 
@@ -95,7 +95,7 @@ async fn draw(draw_request: &DrawRequest) -> Result<DrawResponse, ()> {
         .build()
         .expect("Could not create HTTP client");
 
-    let mut url = dotenv::var("A1111_BASE_URL").expect("Expected a URL to access A1111");
+    let mut url = dotenvy::var("A1111_BASE_URL").expect("Expected a URL to access A1111");
     url.push_str("/sdapi/v1/txt2img");
 
     let request = client.post(url).json(&draw_request).build().unwrap();
