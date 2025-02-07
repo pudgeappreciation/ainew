@@ -13,6 +13,7 @@ use serenity::all::{
 use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::model::application::{CommandOptionType, ResolvedOption, ResolvedValue};
 use serenity::prelude::*;
+use tokio::fs;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct DrawRequest {
@@ -76,7 +77,19 @@ async fn send_initial_interaction_response(ctx: &Context, command: &CommandInter
     }
 }
 
+async fn draw_fake(fake_image_path: &str) -> Result<DrawResponse, ()> {
+    return Ok(DrawResponse {
+        images: vec![fs::read_to_string(fake_image_path).await.unwrap()],
+        info: "".to_string(),
+        parameters: HashMap::new(),
+    });
+}
+
 async fn draw(draw_request: &DrawRequest) -> Result<DrawResponse, ()> {
+    if let Ok(fake_image_path) = dotenv::var("USE_FAKE_IMAGE") {
+        return draw_fake(&fake_image_path).await;
+    }
+
     println!("Drawing image");
     let client = reqwest::ClientBuilder::new()
         .build()
