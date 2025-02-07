@@ -12,7 +12,7 @@ use sqlx::{Pool, Sqlite};
 use tokio;
 
 use serenity::async_trait;
-use serenity::model::application::{Command, Interaction};
+use serenity::model::application::Interaction;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
@@ -50,10 +50,7 @@ impl EventHandler for Bot {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
             match command.data.name.as_str() {
-                "draw" => {
-                    discord::commands::draw::queue(&self.database, ctx, command).await;
-                    self.draw_task.wake();
-                }
+                "draw" => discord::commands::draw::handle(self, ctx, command).await,
                 _ => println!("Command not registered"),
             };
         }
@@ -62,23 +59,7 @@ impl EventHandler for Bot {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        if let Ok(guild_id) = dotenvy::var("TEST_GUILD_ID") {
-            let guild_id = GuildId::new(guild_id.parse().expect("Expected a valid test guild ID"));
-
-            let commands = guild_id
-                .set_commands(&ctx.http, vec![discord::commands::draw::register()])
-                .await;
-
-            println!("I now have the following test guild slash commands: {commands:#?}");
-        }
-
-        if dotenvy::var("APP_ENV").unwrap_or("dev".to_string()) == "production" {
-            let guild_command =
-                Command::create_global_command(&ctx.http, discord::commands::draw::register())
-                    .await;
-
-            println!("I created the following global slash command: {guild_command:#?}");
-        }
+        discord::commands::draw::register(&ctx).await;
     }
 
     // We use the cache_ready event just in case some cache operation is required in whatever use

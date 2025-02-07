@@ -1,11 +1,12 @@
 mod queue;
 
+use serenity::all::{Command, CommandInteraction, Context, GuildId};
 use serenity::builder::{CreateCommand, CreateCommandOption};
 use serenity::model::application::CommandOptionType;
 
-pub use queue::queue;
+use crate::Bot;
 
-pub fn register() -> CreateCommand {
+fn create_command() -> CreateCommand {
     CreateCommand::new("draw")
         .description("draw an image")
         .add_option(
@@ -28,4 +29,27 @@ pub fn register() -> CreateCommand {
             )
             .required(false),
         )
+}
+
+pub async fn register(ctx: &Context) {
+    if let Ok(guild_id) = dotenvy::var("TEST_GUILD_ID") {
+        let guild_id = GuildId::new(guild_id.parse().expect("Expected a valid test guild ID"));
+
+        let commands = guild_id
+            .set_commands(&ctx.http, vec![create_command()])
+            .await;
+
+        println!("I now have the following test guild slash commands: {commands:#?}");
+    }
+
+    if dotenvy::var("APP_ENV").unwrap_or("dev".to_string()) == "production" {
+        let guild_command = Command::create_global_command(&ctx.http, create_command()).await;
+
+        println!("I created the following global slash command: {guild_command:#?}");
+    }
+}
+
+pub async fn handle(bot: &Bot, ctx: Context, command: CommandInteraction) {
+    queue::queue(&bot.database, ctx, command).await;
+    bot.draw_task.wake();
 }
