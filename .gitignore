@@ -1,3 +1,8 @@
 /target
+/output
+
 .env
 image.txt
+
+*.db
+*.sqlite

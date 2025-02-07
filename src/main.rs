@@ -1,5 +1,13 @@
 mod commands;
+mod draw_request;
+mod drawer;
+mod responder;
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use drawer::{start_drawer, PingDrawer};
+use responder::{start_responder, ResponseReceiver};
+use sqlx::{Pool, Sqlite};
 use tokio;
 
 use serenity::async_trait;
@@ -8,16 +16,43 @@ use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
 
-struct Handler;
+async fn get_database() -> Pool<Sqlite> {
+    // Initiate a connection to the database file, creating the file if required.
+    let database = sqlx::sqlite::SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect_with(
+            sqlx::sqlite::SqliteConnectOptions::new()
+                .filename("sqlite.db")
+                .create_if_missing(true),
+        )
+        .await
+        .expect("Couldn't connect to database");
+
+    // Run migrations, which updates the database's schema to the latest version.
+    sqlx::migrate!("./migrations")
+        .run(&database)
+        .await
+        .expect("Couldn't run database migrations");
+
+    database
+}
+
+pub struct Bot {
+    pub database: Pool<Sqlite>,
+    pub ping_drawer: PingDrawer,
+    response_receiver: ResponseReceiver,
+    is_loop_running: AtomicBool,
+}
 
 #[async_trait]
-impl EventHandler for Handler {
+impl EventHandler for Bot {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
-            println!("Received command interaction: {command:?}");
-
             match command.data.name.as_str() {
-                "draw" => _ = commands::draw::run(ctx, command).await,
+                "draw" => {
+                    commands::draw::queue(&self.database, ctx, command).await;
+                    self.ping_drawer.ping();
+                }
                 _ => println!("Command not registered"),
             };
         }
@@ -43,6 +78,18 @@ impl EventHandler for Handler {
             println!("I created the following global slash command: {guild_command:#?}");
         }
     }
+
+    // We use the cache_ready event just in case some cache operation is required in whatever use
+    // case you have for this.
+    async fn cache_ready(&self, ctx: Context, _guilds: Vec<GuildId>) {
+        println!("Cache built successfully!");
+
+        if !self.is_loop_running.load(Ordering::Relaxed) {
+            start_responder(ctx.clone(), self.response_receiver.clone());
+
+            self.is_loop_running.swap(true, Ordering::Relaxed);
+        }
+    }
 }
 
 #[tokio::main]
@@ -53,8 +100,17 @@ async fn main() {
         dotenvy::var("DISCORD_TOKEN").expect("Expected a token for Discord in the environment");
     let intents = GatewayIntents::non_privileged();
 
+    let database = get_database().await;
+    let (sender, response_receiver) = responder::make_channel();
+    let ping_drawer = start_drawer(database.clone(), sender);
+
     let mut client = Client::builder(discord_token, intents)
-        .event_handler(Handler)
+        .event_handler(Bot {
+            database: database.clone(),
+            ping_drawer: ping_drawer.clone(),
+            response_receiver,
+            is_loop_running: AtomicBool::new(false),
+        })
         .await
         .expect("Failed to create Serenity client");
 
