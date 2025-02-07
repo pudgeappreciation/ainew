@@ -3,18 +3,12 @@ mod draw_task;
 mod global;
 mod responder;
 
-use std::sync::atomic::{AtomicBool, Ordering};
-
-use global::channels::respond_to_message::{self, RespondToMessageReceiver};
-use global::channels::wake_draw_task::{self, WakeDrawTask};
-use responder::start_responder;
+use discord::bot::Bot;
+use global::channels::respond_to_message::{self};
+use global::channels::wake_draw_task::{self};
 use sqlx::{Pool, Sqlite};
 use tokio;
 
-use serenity::async_trait;
-use serenity::model::application::Interaction;
-use serenity::model::gateway::Ready;
-use serenity::model::id::GuildId;
 use serenity::prelude::*;
 
 async fn get_database() -> Pool<Sqlite> {
@@ -38,43 +32,6 @@ async fn get_database() -> Pool<Sqlite> {
     database
 }
 
-pub struct Bot {
-    pub database: Pool<Sqlite>,
-    pub draw_task: WakeDrawTask,
-    response_receiver: RespondToMessageReceiver,
-    is_loop_running: AtomicBool,
-}
-
-#[async_trait]
-impl EventHandler for Bot {
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Command(command) = interaction {
-            match command.data.name.as_str() {
-                "draw" => discord::commands::draw::handle(self, ctx, command).await,
-                _ => println!("Command not registered"),
-            };
-        }
-    }
-
-    async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
-
-        discord::commands::draw::register(&ctx).await;
-    }
-
-    // We use the cache_ready event just in case some cache operation is required in whatever use
-    // case you have for this.
-    async fn cache_ready(&self, ctx: Context, _guilds: Vec<GuildId>) {
-        println!("Cache built successfully!");
-
-        if !self.is_loop_running.load(Ordering::Relaxed) {
-            start_responder(ctx.clone(), self.response_receiver.clone());
-
-            self.is_loop_running.swap(true, Ordering::Relaxed);
-        }
-    }
-}
-
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
@@ -89,12 +46,11 @@ async fn main() {
     draw_task::start(database.clone(), draw_task_receiver, sender);
 
     let mut client = Client::builder(discord_token, intents)
-        .event_handler(Bot {
-            database: database.clone(),
-            draw_task: draw_task_sender.clone(),
+        .event_handler(Bot::new(
+            database.clone(),
+            draw_task_sender.clone(),
             response_receiver,
-            is_loop_running: AtomicBool::new(false),
-        })
+        ))
         .await
         .expect("Failed to create Serenity client");
 
