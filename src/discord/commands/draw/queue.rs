@@ -7,12 +7,12 @@ use crate::global::draw_request::DrawRequest;
 use super::respond;
 
 pub async fn queue<'a>(database: &Pool<Sqlite>, ctx: Context, command: CommandInteraction) {
-    let Some(request_id) = respond::init(&ctx, &command).await.ok() else {
+    let Some(message_id) = respond::init(&ctx, &command).await.ok() else {
         respond::failure(&ctx, &command).await;
         return;
     };
 
-    let request = DrawRequest::new_from_command(&command, request_id);
+    let request = DrawRequest::new_from_command(&command, message_id);
     let result = request.save(database);
 
     match result.await {

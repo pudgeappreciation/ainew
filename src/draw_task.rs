@@ -29,7 +29,7 @@ async fn draw_session(database: &Pool<Sqlite>, responder: &RespondToMessage) {
         match result {
             Ok(response) => {
                 responder.send(
-                    message::finished_drawing(response, request.channel_id, request.request_id),
+                    message::finished_drawing(response, request.channel_id, request.message_id),
                     request.channel_id,
                 );
             }

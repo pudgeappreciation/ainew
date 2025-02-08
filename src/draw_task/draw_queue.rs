@@ -8,7 +8,7 @@ struct DbDrawRequest {
     state: String,
     options: String,
     user_id: i64,
-    request_id: i64,
+    message_id: i64,
     channel_id: i64,
 }
 
@@ -18,7 +18,7 @@ impl From<DbDrawRequest> for DrawRequest {
             state: value.state,
             options: serde_json::from_str(&value.options).unwrap_or_default(),
             user_id: UserId::new(value.user_id as u64),
-            request_id: MessageId::new(value.request_id as u64),
+            message_id: MessageId::new(value.message_id as u64),
             channel_id: ChannelId::new(value.channel_id as u64),
         }
     }
@@ -63,7 +63,7 @@ pub async fn get_next_request(database: &Pool<Sqlite>) -> Option<DrawRequest> {
             `state`,
             `options`,
             `user_id`,
-            `request_id`,
+            `message_id`,
             `channel_id`
         FROM `draw_requests`
         WHERE

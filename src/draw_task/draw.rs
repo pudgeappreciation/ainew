@@ -68,7 +68,7 @@ pub async fn draw(draw_request: &DrawRequest) -> Result<DrawResponse, ()> {
     };
 
     let response: DrawResponse = response.into();
-    response.save_images(draw_request.request_id.get()).await;
+    response.save_images(draw_request.message_id.get()).await;
 
     Ok(response)
 }

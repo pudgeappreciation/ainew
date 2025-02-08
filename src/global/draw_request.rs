@@ -13,24 +13,24 @@ pub struct DrawRequest {
     pub state: String,
     pub options: Options,
     pub user_id: UserId,
-    pub request_id: MessageId,
+    pub message_id: MessageId,
     pub channel_id: ChannelId,
 }
 
 impl DrawRequest {
-    pub fn new_from_command(command: &CommandInteraction, request_id: MessageId) -> DrawRequest {
+    pub fn new_from_command(command: &CommandInteraction, message_id: MessageId) -> DrawRequest {
         DrawRequest {
             state: String::from("queued"),
             options: Options::new_from_command(command),
             user_id: command.user.id,
-            request_id,
+            message_id,
             channel_id: command.channel_id,
         }
     }
 
     pub async fn save(&self, database: &Pool<Sqlite>) -> Result<(), ()> {
         let user_id = self.user_id.get() as i64;
-        let request_id = self.request_id.get() as i64;
+        let message_id = self.message_id.get() as i64;
         let channel_id = self.channel_id.get() as i64;
 
         let Ok(created_at) = SystemTime::now().duration_since(UNIX_EPOCH) else {
@@ -46,7 +46,7 @@ impl DrawRequest {
                 `state`,
                 `options`,
                 `user_id`,
-                `request_id`,
+                `message_id`,
                 `channel_id`,
                 `created_at`
             )
@@ -55,7 +55,7 @@ impl DrawRequest {
             self.state,
             options,
             user_id,
-            request_id,
+            message_id,
             channel_id,
             created_at,
         )
@@ -73,14 +73,14 @@ impl DrawRequest {
     }
 
     pub async fn drawing(&self, database: &Pool<Sqlite>) -> Result<(), ()> {
-        let request_id = self.request_id.get() as i64;
+        let message_id = self.message_id.get() as i64;
         let result = sqlx::query!(
             r#"
             UPDATE `draw_requests`
             SET `state` = 'drawing'
-            WHERE `request_id` = ?
+            WHERE `message_id` = ?
             "#,
-            request_id,
+            message_id,
         )
         .execute(database)
         .await;
@@ -92,14 +92,14 @@ impl DrawRequest {
     }
 
     pub async fn complete(&self, database: &Pool<Sqlite>) -> Result<(), ()> {
-        let request_id = self.request_id.get() as i64;
+        let message_id = self.message_id.get() as i64;
         let result = sqlx::query!(
             r#"
             UPDATE `draw_requests`
             SET `state` = 'complete'
-            WHERE `request_id` = ?
+            WHERE `message_id` = ?
             "#,
-            request_id,
+            message_id,
         )
         .execute(database)
         .await;
