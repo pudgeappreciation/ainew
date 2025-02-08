@@ -1,4 +1,5 @@
 mod queue;
+mod respond;
 
 use serenity::all::{Command, CommandInteraction, Context, GuildId};
 use serenity::builder::{CreateCommand, CreateCommandOption};
