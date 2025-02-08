@@ -8,9 +8,11 @@ use draw_queue::get_next_request;
 use sqlx::{Pool, Sqlite};
 use tokio::time::sleep;
 
-use crate::global::{
-    channels::{respond_to_message::RespondToMessage, wake_draw_task::WakeDrawTaskReceiver},
-    responses::Response,
+use crate::{
+    discord::message,
+    global::channels::{
+        respond_to_message::RespondToMessage, wake_draw_task::WakeDrawTaskReceiver,
+    },
 };
 
 async fn draw_session(database: &Pool<Sqlite>, responder: &RespondToMessage) {
@@ -19,19 +21,17 @@ async fn draw_session(database: &Pool<Sqlite>, responder: &RespondToMessage) {
             continue;
         }
 
-        responder.respond(Response::StartingDrawing {
-            channel_id: request.channel_id,
-            message_id: request.request_id,
-            user_id: request.user_id,
-        });
+        responder.send(
+            message::starting_drawing(request.user_id),
+            request.channel_id,
+        );
         let result = draw(&request).await;
         match result {
             Ok(response) => {
-                responder.respond(Response::DrawingResponse {
-                    response,
-                    channel_id: request.channel_id,
-                    message_id: request.request_id,
-                });
+                responder.send(
+                    message::finished_drawing(response, request.channel_id, request.request_id),
+                    request.channel_id,
+                );
             }
             Err(_) => {
                 println!("drawing failed");

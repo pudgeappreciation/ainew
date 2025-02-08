@@ -1,17 +1,16 @@
+use serenity::all::{ChannelId, CreateMessage};
 use tokio::sync::broadcast::{self, error::RecvError, Receiver, Sender};
 
-use crate::global::responses::Response;
-
 #[derive(Clone)]
-pub struct RespondToMessage(Sender<Response>);
+pub struct RespondToMessage(Sender<(CreateMessage, ChannelId)>);
 
 impl RespondToMessage {
-    pub fn respond(&self, response: Response) {
-        _ = self.0.send(response);
+    pub fn send(&self, response: CreateMessage, channel: ChannelId) {
+        _ = self.0.send((response, channel));
     }
 }
 
-pub struct RespondToMessageReceiver(Receiver<Response>);
+pub struct RespondToMessageReceiver(Receiver<(CreateMessage, ChannelId)>);
 
 impl Clone for RespondToMessageReceiver {
     fn clone(&self) -> Self {
@@ -20,13 +19,13 @@ impl Clone for RespondToMessageReceiver {
 }
 
 impl RespondToMessageReceiver {
-    pub async fn next(&mut self) -> Result<Response, RecvError> {
+    pub async fn next(&mut self) -> Result<(CreateMessage, ChannelId), RecvError> {
         self.0.recv().await
     }
 }
 
 pub fn make() -> (RespondToMessage, RespondToMessageReceiver) {
-    let (sender, receiver) = broadcast::channel::<Response>(32);
+    let (sender, receiver) = broadcast::channel::<(CreateMessage, ChannelId)>(32);
 
     (RespondToMessage(sender), RespondToMessageReceiver(receiver))
 }
