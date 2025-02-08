@@ -1,17 +1,17 @@
+pub mod api_options;
+pub mod options;
+
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use options::Options;
 use serde::{Deserialize, Serialize};
-use serenity::all::{
-    ChannelId, CommandInteraction, MessageId, ResolvedOption, ResolvedValue, UserId,
-};
+use serenity::all::{ChannelId, CommandInteraction, MessageId, UserId};
 use sqlx::{Pool, Sqlite};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DrawRequest {
     pub state: String,
-    pub prompt: String,
-    pub negative_prompt: String,
-    pub steps: u8,
+    pub options: Options,
     pub user_id: UserId,
     pub request_id: MessageId,
     pub channel_id: ChannelId,
@@ -19,38 +19,13 @@ pub struct DrawRequest {
 
 impl DrawRequest {
     pub fn new_from_command(command: &CommandInteraction, request_id: MessageId) -> DrawRequest {
-        let mut request = DrawRequest {
-            state: "queued".to_string(),
-            prompt: "".to_string(),
-            negative_prompt: "".to_string(),
-            steps: 20,
+        DrawRequest {
+            state: String::from("queued"),
+            options: Options::new_from_command(command),
             user_id: command.user.id,
             request_id,
             channel_id: command.channel_id,
-        };
-
-        for option in command.data.options().iter() {
-            match option {
-                ResolvedOption {
-                    value: ResolvedValue::String(value),
-                    name: "prompt",
-                    ..
-                } => request.prompt = value.to_string(),
-                ResolvedOption {
-                    value: ResolvedValue::String(value),
-                    name: "negative_prompt",
-                    ..
-                } => request.negative_prompt = value.to_string(),
-                ResolvedOption {
-                    value: ResolvedValue::Integer(value),
-                    name: "steps",
-                    ..
-                } => request.steps = *value as u8,
-                _ => {}
-            }
         }
-
-        request
     }
 
     pub async fn save(&self, database: &Pool<Sqlite>) -> Result<(), ()> {
@@ -63,24 +38,22 @@ impl DrawRequest {
         };
         let created_at = created_at.as_secs() as i64;
 
+        let options = serde_json::to_string(&self.options).map_err(|_| ())?;
+
         let result = sqlx::query!(
             r#"
             INSERT INTO `draw_requests` (
                 `state`,
-                `prompt`,
-                `negative_prompt`,
-                `steps`,
+                `options`,
                 `user_id`,
                 `request_id`,
                 `channel_id`,
                 `created_at`
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             "#,
-            "queued",
-            self.prompt,
-            self.negative_prompt,
-            self.steps,
+            self.state,
+            options,
             user_id,
             request_id,
             channel_id,
@@ -91,7 +64,11 @@ impl DrawRequest {
 
         match result {
             Ok(_) => Ok(()),
-            Err(_) => Err(()),
+            Err(why) => {
+                println!("Cannot respond to slash command: {why}");
+
+                Err(())
+            }
         }
     }
 

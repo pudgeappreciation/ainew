@@ -1,4 +1,3 @@
-use saturating_cast::SaturatingCast;
 use serenity::all::{ChannelId, MessageId, UserId};
 use sqlx::{Pool, Sqlite};
 
@@ -7,9 +6,7 @@ use crate::global::draw_request::DrawRequest;
 #[derive(Debug)]
 struct DbDrawRequest {
     state: String,
-    prompt: String,
-    negative_prompt: String,
-    steps: i64,
+    options: String,
     user_id: i64,
     request_id: i64,
     channel_id: i64,
@@ -19,9 +16,7 @@ impl From<DbDrawRequest> for DrawRequest {
     fn from(value: DbDrawRequest) -> Self {
         DrawRequest {
             state: value.state,
-            prompt: value.prompt,
-            negative_prompt: value.negative_prompt,
-            steps: value.steps.saturating_cast(),
+            options: serde_json::from_str(&value.options).unwrap_or_default(),
             user_id: UserId::new(value.user_id as u64),
             request_id: MessageId::new(value.request_id as u64),
             channel_id: ChannelId::new(value.channel_id as u64),
@@ -66,9 +61,7 @@ pub async fn get_next_request(database: &Pool<Sqlite>) -> Option<DrawRequest> {
         r#"
         SELECT
             `state`,
-            `prompt`,
-            `negative_prompt`,
-            `steps`,
+            `options`,
             `user_id`,
             `request_id`,
             `channel_id`

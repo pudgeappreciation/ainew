@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::fs;
 
-use crate::global::{draw_request::DrawRequest, draw_response::DrawResponse};
+use crate::global::{
+    draw_request::{api_options::ApiOptions, DrawRequest},
+    draw_response::DrawResponse,
+};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 struct DrawResponseBase64 {
@@ -53,7 +56,8 @@ pub async fn draw(draw_request: &DrawRequest) -> Result<DrawResponse, ()> {
     let mut url = dotenvy::var("A1111_BASE_URL").expect("Expected a URL to access A1111");
     url.push_str("/sdapi/v1/txt2img");
 
-    let request = client.post(url).json(&draw_request).build().unwrap();
+    let options = ApiOptions::from(draw_request.options.clone());
+    let request = client.post(url).json(&options).build().unwrap();
 
     let Ok(http_response) = client.execute(request).await else {
         return Err(());
