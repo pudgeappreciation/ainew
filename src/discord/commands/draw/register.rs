@@ -9,8 +9,11 @@ fn create_command() -> CreateCommand {
         .add_option(option::string("prompt", "The prompt to use").required(true))
         .add_option(option::string("negative_prompt", "The negative_prompt to use").required(false))
         .add_option(
-            option::string("size", "The size to use, formatted as {width}x{height}")
-                .required(false),
+            option::string(
+                "size",
+                "The size to use, formatted as {width}x{height}, in pixels",
+            )
+            .required(false),
         )
         .add_option(option::string("model", "The model to use").required(false))
         .add_option(option::number("cfg_scale", "The cfg scale to use").required(false))

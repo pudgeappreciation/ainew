@@ -5,7 +5,8 @@ use super::options::Options;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiOverride {
     pub sd_model_checkpoint: String,
-    pub sd_vae: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sd_vae: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
