@@ -10,6 +10,7 @@ use sqlx::{Pool, Sqlite};
 
 use crate::global::channels::respond_to_message::RespondToMessageReceiver;
 use crate::global::channels::wake_draw_task::WakeDrawTask;
+use crate::global::models::Models;
 
 use super::commands;
 use super::respond_to_message_task;
@@ -17,6 +18,7 @@ use super::respond_to_message_task;
 pub struct Bot {
     pub database: Pool<Sqlite>,
     pub draw_task: WakeDrawTask,
+    pub models: Models,
     response_receiver: RespondToMessageReceiver,
     is_loop_running: AtomicBool,
 }
@@ -27,6 +29,7 @@ impl EventHandler for Bot {
         if let Interaction::Command(command) = interaction {
             match command.data.name.as_str() {
                 "draw" => commands::draw::handle(self, ctx, command).await,
+                "models" => commands::models::handle(self, ctx, command).await,
                 _ => println!("Command not registered"),
             };
         }
@@ -36,6 +39,7 @@ impl EventHandler for Bot {
         println!("{} is connected!", ready.user.name);
 
         commands::draw::register(&ctx).await;
+        commands::models::register(&ctx).await;
     }
 
     // We use the cache_ready event just in case some cache operation is required in whatever use
@@ -56,8 +60,10 @@ impl Bot {
         database: Pool<Sqlite>,
         wake_draw_task: WakeDrawTask,
         response_receiver: RespondToMessageReceiver,
+        models: Models,
     ) -> Bot {
         Bot {
+            models,
             database,
             response_receiver,
             draw_task: wake_draw_task,
