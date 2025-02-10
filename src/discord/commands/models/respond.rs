@@ -1,8 +1,11 @@
+use std::time::Duration;
+
 use serenity::all::{
-    ButtonStyle, CommandInteraction, Context, CreateActionRow, CreateButton,
-    CreateInteractionResponse, CreateInteractionResponseMessage, EditAttachments,
-    EditInteractionResponse, ReactionType,
+    ButtonStyle, CommandInteraction, ComponentInteraction, Context, CreateActionRow, CreateButton,
+    CreateInputText, CreateInteractionResponse, CreateInteractionResponseMessage, CreateQuickModal,
+    EditAttachments, EditInteractionResponse, ReactionType,
 };
+use tokio::time::timeout;
 
 use crate::global::models::Models;
 
@@ -25,47 +28,106 @@ enum Page {
     Only,
 }
 
-fn pagination_buttons(page_index: u32, page: Page) -> Vec<CreateButton> {
+fn pagination_buttons(page_index: usize, item_count: usize, disabled: bool) -> Vec<CreateButton> {
+    let page = match (page_index, item_count > page_index + 1) {
+        (0, true) => Page::First,
+        (0, false) => Page::Only,
+        (_, true) => Page::Middle,
+        (_, false) => Page::Last,
+    };
+
     vec![
-        CreateButton::new("model-page:first")
+        CreateButton::new("set-page:first")
             .emoji(ReactionType::Unicode(String::from("⏪")))
             .style(ButtonStyle::Success)
-            .disabled(matches!(page, Page::First | Page::Only)),
-        CreateButton::new("model-page:previous")
+            .disabled(disabled || matches!(page, Page::First | Page::Only)),
+        CreateButton::new("set-page:previous")
             .emoji(ReactionType::Unicode(String::from("◀️")))
             .style(ButtonStyle::Success)
-            .disabled(matches!(page, Page::First | Page::Only)),
+            .disabled(disabled || matches!(page, Page::First | Page::Only)),
         CreateButton::new("stop")
             .label(format!("{}", page_index + 1))
             .style(ButtonStyle::Secondary)
             .disabled(true),
-        CreateButton::new("model-page:next")
+        CreateButton::new("set-page:next")
             .emoji(ReactionType::Unicode(String::from("▶️")))
             .style(ButtonStyle::Success)
-            .disabled(matches!(page, Page::Last | Page::Only)),
-        CreateButton::new("model-page:last")
+            .disabled(disabled || matches!(page, Page::Last | Page::Only)),
+        CreateButton::new("set-page:last")
             .emoji(ReactionType::Unicode(String::from("⏩")))
             .style(ButtonStyle::Success)
-            .disabled(matches!(page, Page::Last | Page::Only)),
+            .disabled(disabled || matches!(page, Page::Last | Page::Only)),
     ]
 }
 
+pub async fn set_model_modal(ctx: &Context, interaction: &ComponentInteraction) {
+    let ctx = ctx.clone();
+    let interaction = interaction.clone();
+
+    tokio::spawn(async move {
+        let Some(model) = interaction.data.custom_id.get(10..) else {
+            return;
+        };
+
+        let response = interaction.quick_modal(
+            &ctx,
+            CreateQuickModal::new("Model name to copy (for mobile)").field(
+                CreateInputText::new(
+                    serenity::all::InputTextStyle::Short,
+                    "Model",
+                    "model-response",
+                )
+                .value(model),
+            ),
+        );
+
+        let response = timeout(Duration::from_secs(60 * 15), response)
+            .await
+            .map(|r| r.ok())
+            .unwrap_or_default()
+            .unwrap_or_default();
+
+        if let Some(response) = response {
+            _ = response
+                .interaction
+                .create_response(
+                    &ctx.http,
+                    serenity::all::CreateInteractionResponse::Acknowledge,
+                )
+                .await;
+        }
+    });
+}
+
+pub async fn loading(
+    page_index: usize,
+    item_count: usize,
+    ctx: &Context,
+    interaction: &CommandInteraction,
+) {
+    _ = interaction
+        .edit_response(
+            &ctx.http,
+            EditInteractionResponse::new()
+                .embeds(Vec::new())
+                .clear_attachments()
+                .components(vec![CreateActionRow::Buttons(pagination_buttons(
+                    page_index, item_count, true,
+                ))])
+                .content("Loading..."),
+        )
+        .await;
+}
+
 pub async fn model_page(
-    page_index: u32,
+    page_index: usize,
     models: &Models,
     ctx: &Context,
     command: &CommandInteraction,
-) {
+) -> Result<(serenity::all::Message, usize), serenity::Error> {
     let models = models.read().await;
-    let mut pages = models.chunks(5).skip(page_index as usize);
-    let page = pages.next().unwrap();
-
-    let page_enum = match (page_index, pages.next()) {
-        (0, Some(_)) => Page::First,
-        (0, None) => Page::Only,
-        (_, Some(_)) => Page::Middle,
-        (_, None) => Page::Last,
-    };
+    let pages: Vec<_> = models.chunks(5).collect();
+    let page = pages.get(page_index).expect("could not get pages");
 
     let buttons: Vec<_> = page
         .iter()
@@ -91,13 +153,15 @@ pub async fn model_page(
     let embeds = page.iter().map(|model| model.embed()).collect();
 
     let builder = EditInteractionResponse::new()
-        .content("Hello, World!")
         .embeds(embeds)
         .components(vec![
             CreateActionRow::Buttons(buttons),
-            CreateActionRow::Buttons(pagination_buttons(page_index, page_enum)),
+            CreateActionRow::Buttons(pagination_buttons(page_index, models.len(), false)),
         ])
         .attachments(attachments);
 
-    _ = command.edit_response(&ctx.http, builder).await;
+    command
+        .edit_response(&ctx.http, builder)
+        .await
+        .map(|message| (message, page_index))
 }

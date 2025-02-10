@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-serenity = { version = "^0.12" }
+serenity = { version = "^0.12", features = ["collector"] }
 tokio = { version = "^1", features = ["rt-multi-thread", "signal"] }
 dotenvy = { version = "^0.15" }
 reqwest = { version = "^0.12", features = ["json"] }
