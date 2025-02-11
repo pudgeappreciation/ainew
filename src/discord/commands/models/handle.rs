@@ -5,6 +5,7 @@ use serenity::futures::StreamExt;
 use serenity::prelude::*;
 
 use crate::discord::bot::Bot;
+use crate::discord::commands::utilities::{copy_modal, pagination};
 
 use super::respond;
 
@@ -26,19 +27,15 @@ pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
         .stream();
 
     while let Some(interaction) = interaction_stream.next().await {
-        println!("{}", interaction.data.custom_id.as_str());
-        if interaction.data.custom_id.starts_with("set-page:") {
-            page_index = match interaction.data.custom_id.as_str() {
-                "set-page:last" => (bot.models.read().await.len() - 1) / 5,
-                "set-page:next" => page_index.saturating_add(1),
-                "set-page:previous" => page_index.saturating_sub(1),
-                _ => 0,
-            };
+        if let Some(new_index) =
+            pagination::matches(&interaction, page_index, bot.models.read().await.len() - 1)
+        {
             _ = interaction.defer(&ctx.http).await;
-            respond::loading(page_index, bot.models.read().await.len(), &ctx, &command).await;
+            page_index = new_index;
+            pagination::loading(page_index, bot.models.read().await.len(), &ctx, &command).await;
             _ = respond::model_page(page_index, &bot.models, &ctx, &command).await;
-        } else if interaction.data.custom_id.starts_with("set-model:") {
-            respond::set_model_modal(&ctx, &interaction).await;
+        } else if let Some(model) = copy_modal::matches(interaction.data.custom_id.as_str()) {
+            copy_modal::handle(&ctx, model, &interaction).await;
         }
     }
 

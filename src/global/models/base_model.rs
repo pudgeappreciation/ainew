@@ -7,6 +7,8 @@ use serde_json::Value;
 use serenity::all::{CreateAttachment, CreateEmbed, EmbedMessageBuilding, MessageBuilder};
 use tokio::sync::RwLock;
 
+use crate::discord::commands::utilities::copy_modal;
+
 use super::{civitai_info::CivitaiInfo, preview::ModelPreview};
 
 #[derive(Debug, Clone)]
@@ -86,6 +88,12 @@ impl Model {
             preview,
             civitai_info: model_info,
         })
+    }
+}
+
+impl copy_modal::CopyButtonId for Model {
+    fn id(&self) -> String {
+        self.internal_name.clone()
     }
 }
 
