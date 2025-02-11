@@ -11,6 +11,7 @@ use sqlx::{Pool, Sqlite};
 use crate::global::channels::respond_to_message::RespondToMessageReceiver;
 use crate::global::channels::wake_draw_task::WakeDrawTask;
 use crate::global::models::base_model::Models;
+use crate::global::models::lora::Loras;
 
 use super::commands;
 use super::respond_to_message_task;
@@ -19,6 +20,7 @@ pub struct Bot {
     pub database: Pool<Sqlite>,
     pub draw_task: WakeDrawTask,
     pub models: Models,
+    pub loras: Loras,
     response_receiver: RespondToMessageReceiver,
     is_loop_running: AtomicBool,
 }
@@ -29,6 +31,7 @@ impl EventHandler for Bot {
         if let Interaction::Command(command) = interaction {
             match command.data.name.as_str() {
                 "draw" => commands::draw::handle(self, ctx, command).await,
+                "loras" => commands::loras::handle(self, ctx, command).await,
                 "models" => commands::models::handle(self, ctx, command).await,
                 _ => println!("Command not registered"),
             };
@@ -39,6 +42,7 @@ impl EventHandler for Bot {
         println!("{} is connected!", ready.user.name);
 
         commands::draw::register(&ctx).await;
+        commands::loras::register(&ctx).await;
         commands::models::register(&ctx).await;
     }
 
@@ -61,8 +65,10 @@ impl Bot {
         wake_draw_task: WakeDrawTask,
         response_receiver: RespondToMessageReceiver,
         models: Models,
+        loras: Loras,
     ) -> Bot {
         Bot {
+            loras,
             models,
             database,
             response_receiver,
