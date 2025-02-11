@@ -7,7 +7,7 @@ use serenity::all::{
 };
 use tokio::time::timeout;
 
-use crate::global::models::Models;
+use crate::global::models::base_model::Models;
 
 pub async fn init(ctx: &Context, command: &CommandInteraction) {
     let message = CreateInteractionResponseMessage::new()

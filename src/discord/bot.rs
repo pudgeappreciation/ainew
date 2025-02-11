@@ -10,7 +10,7 @@ use sqlx::{Pool, Sqlite};
 
 use crate::global::channels::respond_to_message::RespondToMessageReceiver;
 use crate::global::channels::wake_draw_task::WakeDrawTask;
-use crate::global::models::Models;
+use crate::global::models::base_model::Models;
 
 use super::commands;
 use super::respond_to_message_task;
