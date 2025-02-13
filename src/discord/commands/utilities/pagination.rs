@@ -11,12 +11,20 @@ enum Page {
     Only,
 }
 
+pub fn page<'a, T>(items: &'a Vec<T>, page_index: usize) -> Vec<&T>
+where
+    &'a T: Sized,
+{
+    items.iter().skip(page_index * 5).take(5).collect()
+}
+
 pub fn buttons(page_index: usize, item_count: usize, disabled: bool) -> CreateActionRow {
-    let page = match (page_index, item_count > page_index + 1) {
-        (0, true) => Page::First,
-        (0, false) => Page::Only,
-        (_, true) => Page::Middle,
-        (_, false) => Page::Last,
+    let items_seen = (page_index + 1) * 5;
+    let page = match (page_index, item_count <= items_seen) {
+        (0, false) => Page::First,
+        (0, true) => Page::Only,
+        (_, false) => Page::Middle,
+        (_, true) => Page::Last,
     };
 
     CreateActionRow::Buttons(vec![
@@ -46,14 +54,14 @@ pub fn buttons(page_index: usize, item_count: usize, disabled: bool) -> CreateAc
 pub fn matches(
     interaction: &ComponentInteraction,
     page_index: usize,
-    value_count: usize,
+    item_count: usize,
 ) -> Option<usize> {
     if !interaction.data.custom_id.as_str().starts_with("set-page:") {
         return None;
     }
 
     let page_index = match interaction.data.custom_id.as_str() {
-        "set-page:last" => value_count / 5,
+        "set-page:last" => (item_count - 1) / 5,
         "set-page:next" => page_index.saturating_add(1),
         "set-page:previous" => page_index.saturating_sub(1),
         _ => 0,
@@ -61,19 +69,14 @@ pub fn matches(
     Some(page_index)
 }
 
-pub async fn loading(
-    page_index: usize,
-    item_count: usize,
-    ctx: &Context,
-    interaction: &CommandInteraction,
-) {
+pub async fn loading(ctx: &Context, interaction: &CommandInteraction) {
     _ = interaction
         .edit_response(
             &ctx.http,
             EditInteractionResponse::new()
                 .embeds(Vec::new())
                 .clear_attachments()
-                .components(vec![buttons(page_index, item_count, true)])
+                .components(vec![buttons(0, 0, true)])
                 .content("Loading..."),
         )
         .await;

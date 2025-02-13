@@ -3,9 +3,9 @@ use serenity::all::{
     EditAttachments, EditInteractionResponse,
 };
 
-use crate::{
-    discord::commands::utilities::{copy_modal, pagination},
-    global::models::base_model::Models,
+use crate::discord::{
+    bot::Bot,
+    commands::utilities::{copy_modal, pagination},
 };
 
 pub async fn init(ctx: &Context, command: &CommandInteraction) {
@@ -21,13 +21,12 @@ pub async fn init(ctx: &Context, command: &CommandInteraction) {
 
 pub async fn model_page(
     page_index: usize,
-    models: &Models,
+    bot: &Bot,
     ctx: &Context,
     command: &CommandInteraction,
 ) -> Result<(serenity::all::Message, usize), serenity::Error> {
-    let models = models.read().await;
-    let pages: Vec<_> = models.chunks(5).collect();
-    let page = pages.get(page_index).expect("could not get pages");
+    let models = bot.models.read().await;
+    let page = pagination::page(&models, page_index);
 
     let mut attachments = EditAttachments::new();
     for attachment in page.iter().filter_map(|model| model.attachment()) {
@@ -39,7 +38,7 @@ pub async fn model_page(
     let builder = EditInteractionResponse::new()
         .embeds(embeds)
         .components(vec![
-            copy_modal::buttons(page).await,
+            copy_modal::buttons(&page).await,
             pagination::buttons(page_index, models.len(), false),
         ])
         .attachments(attachments);

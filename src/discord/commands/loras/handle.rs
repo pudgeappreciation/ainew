@@ -12,7 +12,7 @@ use super::respond;
 pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
     respond::init(&ctx, &command).await;
 
-    let (message, mut page_index) = match respond::model_page(0, &bot.loras, &ctx, &command).await {
+    let (message, mut page_index) = match respond::model_page(0, &bot, &ctx, &command).await {
         Ok(message) => message,
         Err(err) => {
             println!("{}", err);
@@ -27,12 +27,12 @@ pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
 
     while let Some(interaction) = interaction_stream.next().await {
         if let Some(new_index) =
-            pagination::matches(&interaction, page_index, bot.models.read().await.len() - 1)
+            pagination::matches(&interaction, page_index, bot.models.read().await.len())
         {
             _ = interaction.defer(&ctx.http).await;
             page_index = new_index;
-            pagination::loading(page_index, bot.models.read().await.len(), &ctx, &command).await;
-            _ = respond::model_page(page_index, &bot.loras, &ctx, &command).await;
+            pagination::loading(&ctx, &command).await;
+            _ = respond::model_page(page_index, &bot, &ctx, &command).await;
         } else if let Some(model) = copy_modal::matches(interaction.data.custom_id.as_str()) {
             copy_modal::handle(&ctx, model, &interaction).await;
         }
