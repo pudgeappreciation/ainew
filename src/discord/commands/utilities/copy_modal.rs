@@ -10,6 +10,15 @@ pub trait CopyButtonId {
     fn id(&self) -> String;
 }
 
+impl<T> CopyButtonId for &T
+where
+    T: CopyButtonId,
+{
+    fn id(&self) -> String {
+        self.to_owned().id()
+    }
+}
+
 pub async fn buttons<T>(page: &[T]) -> CreateActionRow
 where
     T: CopyButtonId,
