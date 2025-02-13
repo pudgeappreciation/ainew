@@ -5,7 +5,7 @@ use serenity::all::{
 
 use crate::discord::{
     bot::Bot,
-    commands::utilities::{copy_modal, pagination},
+    commands::utilities::{copy_modal, favorites, pagination},
 };
 
 pub async fn init(ctx: &Context, command: &CommandInteraction) {
@@ -39,6 +39,7 @@ pub async fn model_page(
         .embeds(embeds)
         .components(vec![
             copy_modal::buttons(&page).await,
+            favorites::buttons(page, command.user.id, &bot.database).await,
             pagination::buttons(page_index, models.len(), false),
         ])
         .attachments(attachments);
@@ -47,6 +48,32 @@ pub async fn model_page(
         .edit_response(&ctx.http, builder)
         .await
         .map(|message| (message, page_index))
+}
+
+pub async fn update_favorites(
+    page_index: usize,
+    bot: &Bot,
+    ctx: &Context,
+    command: &CommandInteraction,
+) {
+    let models = bot.models.read().await;
+    let page = pagination::page(&models, page_index);
+
+    let builder = EditInteractionResponse::new().components(vec![
+        copy_modal::buttons(&page).await,
+        favorites::buttons(
+            pagination::page(&models, page_index),
+            command.user.id,
+            &bot.database,
+        )
+        .await,
+        pagination::buttons(page_index, models.len(), false),
+    ]);
+
+    _ = command
+        .edit_response(&ctx.http, builder)
+        .await
+        .map(|message| (message, page_index));
 }
 
 pub async fn update_pagination(

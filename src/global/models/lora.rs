@@ -7,7 +7,7 @@ use serde_json::Value;
 use serenity::all::{CreateAttachment, CreateEmbed, EmbedMessageBuilding, MessageBuilder};
 use tokio::sync::RwLock;
 
-use crate::discord::commands::utilities::copy_modal;
+use crate::{discord::commands::utilities::copy_modal, global::favorites};
 
 use super::{civitai_info::CivitaiInfo, preview::ModelPreview};
 
@@ -88,6 +88,12 @@ impl Lora {
             preview,
             civitai_info: model_info,
         })
+    }
+}
+
+impl favorites::FavoritesString for Lora {
+    fn string(&self) -> String {
+        self.internal_name.to_string()
     }
 }
 
