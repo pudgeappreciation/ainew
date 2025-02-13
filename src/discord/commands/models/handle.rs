@@ -5,7 +5,7 @@ use serenity::futures::StreamExt;
 use serenity::prelude::*;
 
 use crate::discord::bot::Bot;
-use crate::discord::commands::utilities::{copy_modal, pagination};
+use crate::discord::commands::utilities::{copy_modal, favorites, pagination};
 
 use super::respond;
 
@@ -35,6 +35,11 @@ pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
             _ = respond::model_page(page_index, &bot, &ctx, &command).await;
         } else if let Some(model) = copy_modal::matches(interaction.data.custom_id.as_str()) {
             copy_modal::handle(&ctx, model, &interaction).await;
+        } else if let Some(favorite) = favorites::matches(interaction.data.custom_id.as_str()) {
+            favorites::handle(&ctx, &interaction).await;
+            _ = favorite.save(command.user.id, &bot.database).await;
+            respond::update_favorites(page_index, &bot, &ctx, &command).await;
+            _ = respond::model_page(page_index, &bot, &ctx, &command).await;
         }
     }
 
