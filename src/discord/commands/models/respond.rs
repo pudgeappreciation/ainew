@@ -48,3 +48,23 @@ pub async fn model_page(
         .await
         .map(|message| (message, page_index))
 }
+
+pub async fn update_pagination(
+    page_index: usize,
+    bot: &Bot,
+    ctx: &Context,
+    command: &CommandInteraction,
+) {
+    let models = bot.models.read().await;
+
+    let builder = EditInteractionResponse::new()
+        .content("Loading...")
+        .embeds(Vec::new())
+        .components(vec![pagination::buttons(page_index, models.len(), false)])
+        .attachments(EditAttachments::new());
+
+    _ = command
+        .edit_response(&ctx.http, builder)
+        .await
+        .map(|message| (message, page_index));
+}

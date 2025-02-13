@@ -1,6 +1,5 @@
 use serenity::all::{
-    ButtonStyle, CommandInteraction, ComponentInteraction, Context, CreateActionRow, CreateButton,
-    EditInteractionResponse, ReactionType,
+    ButtonStyle, ComponentInteraction, CreateActionRow, CreateButton, ReactionType,
 };
 
 #[derive(PartialEq, Eq)]
@@ -67,17 +66,4 @@ pub fn matches(
         _ => 0,
     };
     Some(page_index)
-}
-
-pub async fn loading(ctx: &Context, interaction: &CommandInteraction) {
-    _ = interaction
-        .edit_response(
-            &ctx.http,
-            EditInteractionResponse::new()
-                .embeds(Vec::new())
-                .clear_attachments()
-                .components(vec![buttons(0, 0, true)])
-                .content("Loading..."),
-        )
-        .await;
 }

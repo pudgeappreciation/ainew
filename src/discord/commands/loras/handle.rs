@@ -31,7 +31,7 @@ pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
         {
             _ = interaction.defer(&ctx.http).await;
             page_index = new_index;
-            pagination::loading(&ctx, &command).await;
+            respond::update_pagination(page_index, &bot, &ctx, &command).await;
             _ = respond::model_page(page_index, &bot, &ctx, &command).await;
         } else if let Some(model) = copy_modal::matches(interaction.data.custom_id.as_str()) {
             copy_modal::handle(&ctx, model, &interaction).await;
