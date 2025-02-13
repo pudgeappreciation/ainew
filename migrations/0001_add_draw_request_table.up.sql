@@ -5,4 +5,4 @@ CREATE TABLE `draw_requests` (
     `message_id` INTEGER NOT NULL,
     `channel_id` INTEGER NOT NULL,
     `created_at` INTEGER NOT NULL
-)
+);
