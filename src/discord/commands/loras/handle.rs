@@ -27,7 +27,7 @@ pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
 
     while let Some(interaction) = interaction_stream.next().await {
         if let Some(new_index) =
-            pagination::matches(&interaction, page_index, bot.models.read().await.len())
+            pagination::matches(&interaction, page_index, bot.loras.read().await.len())
         {
             _ = interaction.defer(&ctx.http).await;
             page_index = new_index;
