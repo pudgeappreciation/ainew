@@ -89,6 +89,16 @@ impl Model {
             civitai_info: model_info,
         })
     }
+
+    pub fn name_autocomplete(&self) -> (String, String) {
+        (
+            self.internal_name.clone(),
+            self.civitai_info
+                .as_ref()
+                .map(|info| info.name.clone())
+                .unwrap_or_else(|| self.internal_name.clone()),
+        )
+    }
 }
 
 impl favorites::FavoritesString for Model {

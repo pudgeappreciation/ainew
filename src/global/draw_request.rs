@@ -72,6 +72,30 @@ impl DrawRequest {
         }
     }
 
+    pub async fn popular_models(database: &Pool<Sqlite>) -> Vec<String> {
+        let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) else {
+            return Vec::new();
+        };
+        let last_week = (now.as_secs() - (60 * 60 * 24 * 7)) as i64;
+
+        sqlx::query_scalar!(
+            "
+            SELECT JSON_EXTRACT(`draw_requests`.`options`, '$.model') AS `models: Option<String>`
+            FROM `draw_requests`
+            WHERE `draw_requests`.`created_at` > ?
+            GROUP BY JSON_EXTRACT(`draw_requests`.`options`, '$.model')
+            ORDER BY COUNT(*);
+            ",
+            last_week,
+        )
+        .fetch_all(database)
+        .await
+        .unwrap_or_else(|_| Vec::new())
+        .into_iter()
+        .filter_map(|model_name| model_name.flatten())
+        .collect()
+    }
+
     pub async fn drawing(&self, database: &Pool<Sqlite>) -> Result<(), ()> {
         let message_id = self.message_id.get() as i64;
         let result = sqlx::query!(

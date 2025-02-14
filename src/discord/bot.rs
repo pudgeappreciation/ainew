@@ -35,6 +35,11 @@ impl EventHandler for Bot {
                 "models" => commands::models::handle(self, ctx, command).await,
                 _ => println!("Command not registered"),
             };
+        } else if let Interaction::Autocomplete(autocomplete) = interaction {
+            match autocomplete.data.name.as_str() {
+                "draw" => commands::draw::autocomplete(self, ctx, autocomplete).await,
+                _ => println!("Autocomplete not registered"),
+            };
         }
     }
 
