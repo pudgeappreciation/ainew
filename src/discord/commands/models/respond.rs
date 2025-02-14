@@ -36,6 +36,7 @@ pub async fn model_page(
     let embeds = page.iter().map(|model| model.embed()).collect();
 
     let builder = EditInteractionResponse::new()
+        .content("")
         .embeds(embeds)
         .components(vec![
             copy_modal::buttons(&page).await,
