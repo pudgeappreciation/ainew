@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use serenity::all::{Context, EventHandler};
+use serenity::all::{Command, Context, EventHandler};
 use serenity::async_trait;
 use serenity::model::application::Interaction;
 use serenity::model::gateway::Ready;
@@ -41,9 +41,36 @@ impl EventHandler for Bot {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        commands::draw::register(&ctx).await;
-        commands::loras::register(&ctx).await;
-        commands::models::register(&ctx).await;
+        if let Ok(guild_id) = dotenvy::var("TEST_GUILD_ID") {
+            let guild_id = GuildId::new(guild_id.parse().expect("Expected a valid test guild ID"));
+
+            let commands = guild_id
+                .set_commands(
+                    &ctx.http,
+                    vec![
+                        commands::draw::create(),
+                        commands::loras::create(),
+                        commands::models::create(),
+                    ],
+                )
+                .await;
+
+            println!("I now have the following test guild slash commands: {commands:#?}");
+        }
+
+        if dotenvy::var("APP_ENV").unwrap_or("dev".to_string()) == "production" {
+            let guild_commands = Command::set_global_commands(
+                &ctx.http,
+                vec![
+                    commands::draw::create(),
+                    commands::loras::create(),
+                    commands::models::create(),
+                ],
+            )
+            .await;
+
+            println!("I created the following global slash command: {guild_commands:#?}");
+        }
     }
 
     // We use the cache_ready event just in case some cache operation is required in whatever use
