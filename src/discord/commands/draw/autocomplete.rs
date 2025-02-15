@@ -1,4 +1,5 @@
 mod model;
+mod size;
 
 use serenity::all::{
     CommandInteraction, Context, CreateAutocompleteResponse, ResolvedOption, ResolvedValue,
@@ -15,6 +16,11 @@ async fn get_options(bot: &Bot, interaction: &CommandInteraction) -> CreateAutoc
                 name: "model",
                 ..
             } => return model::handle(bot, interaction).await,
+            ResolvedOption {
+                value: ResolvedValue::Autocomplete { kind: _, value: _ },
+                name: "size",
+                ..
+            } => return size::handle(),
             _ => {}
         }
     }
