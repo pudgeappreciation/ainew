@@ -29,7 +29,7 @@ pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
     }
 
     let (message, mut page_index) =
-        match respond::model_page(initial_page, &bot, &ctx, &command).await {
+        match respond::lora_page(initial_page, &bot, &ctx, &command).await {
             Ok(message) => message,
             Err(err) => {
                 println!("{}", err);
@@ -49,14 +49,14 @@ pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
             _ = interaction.defer(&ctx.http).await;
             page_index = new_index;
             respond::update_pagination(page_index, &bot, &ctx, &command).await;
-            _ = respond::model_page(page_index, &bot, &ctx, &command).await;
+            _ = respond::lora_page(page_index, &bot, &ctx, &command).await;
         } else if let Some(model) = copy_modal::matches(interaction.data.custom_id.as_str()) {
             copy_modal::handle(&ctx, model, &interaction).await;
         } else if let Some(favorite) = favorites::matches(interaction.data.custom_id.as_str()) {
             favorites::handle(&ctx, &interaction).await;
             _ = favorite.save(command.user.id, &bot.database).await;
             respond::update_favorites(page_index, &bot, &ctx, &command).await;
-            _ = respond::model_page(page_index, &bot, &ctx, &command).await;
+            _ = respond::lora_page(page_index, &bot, &ctx, &command).await;
         }
     }
 

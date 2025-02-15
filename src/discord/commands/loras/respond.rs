@@ -19,21 +19,21 @@ pub async fn init(ctx: &Context, command: &CommandInteraction) {
     }
 }
 
-pub async fn model_page(
+pub async fn lora_page(
     page_index: usize,
     bot: &Bot,
     ctx: &Context,
     command: &CommandInteraction,
 ) -> Result<(serenity::all::Message, usize), serenity::Error> {
-    let models = bot.loras.read().await;
-    let page = pagination::page(&models, page_index);
+    let loras = bot.loras.read().await;
+    let page = pagination::page(&loras, page_index);
 
     let mut attachments = EditAttachments::new();
-    for attachment in page.iter().filter_map(|model| model.attachment()) {
+    for attachment in page.iter().filter_map(|lora| lora.attachment()) {
         attachments = attachments.add(attachment);
     }
 
-    let embeds = page.iter().map(|model| model.embed()).collect();
+    let embeds = page.iter().map(|lora| lora.embed()).collect();
 
     let builder = EditInteractionResponse::new()
         .content("")
@@ -41,7 +41,7 @@ pub async fn model_page(
         .components(vec![
             copy_modal::buttons(&page).await,
             favorites::buttons(page, command.user.id, &bot.database).await,
-            pagination::buttons(page_index, models.len(), false),
+            pagination::buttons(page_index, loras.len(), false),
         ])
         .attachments(attachments);
 
@@ -57,18 +57,18 @@ pub async fn update_favorites(
     ctx: &Context,
     command: &CommandInteraction,
 ) {
-    let models = bot.models.read().await;
-    let page = pagination::page(&models, page_index);
+    let loras = bot.loras.read().await;
+    let page = pagination::page(&loras, page_index);
 
     let builder = EditInteractionResponse::new().components(vec![
         copy_modal::buttons(&page).await,
         favorites::buttons(
-            pagination::page(&models, page_index),
+            pagination::page(&loras, page_index),
             command.user.id,
             &bot.database,
         )
         .await,
-        pagination::buttons(page_index, models.len(), false),
+        pagination::buttons(page_index, loras.len(), false),
     ]);
 
     _ = command
@@ -83,12 +83,12 @@ pub async fn update_pagination(
     ctx: &Context,
     command: &CommandInteraction,
 ) {
-    let models = bot.models.read().await;
+    let loras = bot.loras.read().await;
 
     let builder = EditInteractionResponse::new()
         .content("Loading...")
         .embeds(Vec::new())
-        .components(vec![pagination::buttons(page_index, models.len(), false)])
+        .components(vec![pagination::buttons(page_index, loras.len(), false)])
         .attachments(EditAttachments::new());
 
     _ = command
