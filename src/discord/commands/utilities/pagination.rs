@@ -10,10 +10,12 @@ enum Page {
     Only,
 }
 
-fn clamp_page_index(page_index: usize, item_count: usize) -> usize {
-    let max_index = item_count.saturating_sub(1) / 5;
+fn max_page_index(item_count: usize) -> usize {
+    item_count.saturating_sub(1) / 5
+}
 
-    page_index.min(max_index)
+fn clamp_page_index(page_index: usize, item_count: usize) -> usize {
+    page_index.min(max_page_index(item_count))
 }
 
 pub fn page<'a, T>(items: &'a Vec<T>, page_index: usize) -> Vec<&T>
@@ -48,7 +50,11 @@ pub fn buttons(page_index: usize, item_count: usize, disabled: bool) -> CreateAc
             .style(ButtonStyle::Success)
             .disabled(disabled || matches!(page, Page::First | Page::Only)),
         CreateButton::new("stop")
-            .label(format!("{}", page_index + 1))
+            .label(format!(
+                "{} / {}",
+                page_index + 1,
+                max_page_index(item_count) + 1,
+            ))
             .style(ButtonStyle::Secondary)
             .disabled(true),
         CreateButton::new("set-page:next")
@@ -74,7 +80,7 @@ pub fn matches(
     }
 
     let page_index = match interaction.data.custom_id.as_str() {
-        "set-page:last" => (item_count - 1) / 5,
+        "set-page:last" => (item_count.saturating_sub(1)) / 5,
         "set-page:next" => page_index.saturating_add(1),
         "set-page:previous" => page_index.saturating_sub(1),
         _ => 0,
