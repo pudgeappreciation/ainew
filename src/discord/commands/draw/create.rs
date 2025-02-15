@@ -12,7 +12,8 @@ pub fn create() -> CreateCommand {
                 "size",
                 "The size to use, formatted as {width}x{height}, in pixels",
             )
-            .required(false),
+            .required(false)
+            .set_autocomplete(true),
         )
         .add_option(
             option::string("model", "The model to use")
