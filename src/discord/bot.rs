@@ -10,8 +10,9 @@ use sqlx::{Pool, Sqlite};
 
 use crate::global::channels::respond_to_message::RespondToMessageReceiver;
 use crate::global::channels::wake_draw_task::WakeDrawTask;
-use crate::global::generation_options::model::Models;
 use crate::global::generation_options::lora::Loras;
+use crate::global::generation_options::model::Models;
+use crate::global::generation_options::sampler::Samplers;
 
 use super::commands;
 use super::respond_to_message_task;
@@ -21,6 +22,7 @@ pub struct Bot {
     pub draw_task: WakeDrawTask,
     pub models: Models,
     pub loras: Loras,
+    pub samplers: Samplers,
     response_receiver: RespondToMessageReceiver,
     is_loop_running: AtomicBool,
 }
@@ -98,10 +100,12 @@ impl Bot {
         response_receiver: RespondToMessageReceiver,
         models: Models,
         loras: Loras,
+        samplers: Samplers,
     ) -> Bot {
         Bot {
             loras,
             models,
+            samplers,
             database,
             response_receiver,
             draw_task: wake_draw_task,

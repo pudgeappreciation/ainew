@@ -22,7 +22,11 @@ pub fn create() -> CreateCommand {
         )
         .add_option(option::number("cfg_scale", "The cfg scale to use").required(false))
         .add_option(option::int("steps", "The steps to use, default 10").required(false))
-        .add_option(option::string("sampler", "The sampler to use").required(false))
+        .add_option(
+            option::string("sampler", "The sampler to use")
+                .required(false)
+                .set_autocomplete(true),
+        )
         .add_option(option::string("scheduler", "The scheduler to use").required(false))
         .add_option(option::int("clip_skip", "The clip skip to use").required(false))
         .add_option(option::int("seed", "The seed to use").required(false))

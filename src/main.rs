@@ -10,7 +10,7 @@ use discord::bot::Bot;
 use global::channels::respond_to_message::{self};
 use global::channels::wake_draw_task::{self};
 
-use global::generation_options::{lora, model};
+use global::generation_options::{lora, model, sampler};
 use serenity::prelude::*;
 use tokio;
 
@@ -29,6 +29,7 @@ async fn main() {
 
     let models = Arc::new(RwLock::new(model::get().await));
     let loras = Arc::new(RwLock::new(lora::get().await));
+    let samplers = Arc::new(RwLock::new(sampler::get().await));
 
     let mut client = Client::builder(discord_token, intents)
         .event_handler(Bot::new(
@@ -37,6 +38,7 @@ async fn main() {
             response_receiver,
             models.clone(),
             loras.clone(),
+            samplers.clone(),
         ))
         .await
         .expect("Failed to create Serenity client");

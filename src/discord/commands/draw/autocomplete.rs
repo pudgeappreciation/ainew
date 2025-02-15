@@ -1,4 +1,5 @@
 mod model;
+mod sampler;
 mod size;
 
 use serenity::all::{
@@ -21,6 +22,11 @@ async fn get_options(bot: &Bot, interaction: &CommandInteraction) -> CreateAutoc
                 name: "size",
                 ..
             } => return size::handle(),
+            ResolvedOption {
+                value: ResolvedValue::Autocomplete { kind: _, value: _ },
+                name: "sampler",
+                ..
+            } => return sampler::handle(bot).await,
             _ => {}
         }
     }
