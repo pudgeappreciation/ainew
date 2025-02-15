@@ -13,6 +13,7 @@ use crate::global::channels::wake_draw_task::WakeDrawTask;
 use crate::global::generation_options::lora::Loras;
 use crate::global::generation_options::model::Models;
 use crate::global::generation_options::sampler::Samplers;
+use crate::global::generation_options::scheduler::Schedulers;
 
 use super::commands;
 use super::respond_to_message_task;
@@ -23,6 +24,7 @@ pub struct Bot {
     pub models: Models,
     pub loras: Loras,
     pub samplers: Samplers,
+    pub schedulers: Schedulers,
     response_receiver: RespondToMessageReceiver,
     is_loop_running: AtomicBool,
 }
@@ -101,11 +103,13 @@ impl Bot {
         models: Models,
         loras: Loras,
         samplers: Samplers,
+        schedulers: Schedulers,
     ) -> Bot {
         Bot {
             loras,
             models,
             samplers,
+            schedulers,
             database,
             response_receiver,
             draw_task: wake_draw_task,

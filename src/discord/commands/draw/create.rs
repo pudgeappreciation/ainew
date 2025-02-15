@@ -27,7 +27,14 @@ pub fn create() -> CreateCommand {
                 .required(false)
                 .set_autocomplete(true),
         )
-        .add_option(option::string("scheduler", "The scheduler to use").required(false))
+        .add_option(
+            option::string(
+                "scheduler",
+                "The scheduler to use (Leaving this blank is usually best)",
+            )
+            .required(false)
+            .set_autocomplete(true),
+        )
         .add_option(option::int("clip_skip", "The clip skip to use").required(false))
         .add_option(option::int("seed", "The seed to use").required(false))
 }
