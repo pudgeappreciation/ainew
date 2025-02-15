@@ -10,7 +10,7 @@ use discord::bot::Bot;
 use global::channels::respond_to_message::{self};
 use global::channels::wake_draw_task::{self};
 
-use global::models::{base_model, lora};
+use global::generation_options::{base_model, lora};
 use serenity::prelude::*;
 use tokio;
 
