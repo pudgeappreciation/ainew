@@ -10,7 +10,6 @@ use serenity::all::{
 use crate::discord::bot::Bot;
 
 async fn get_options(bot: &Bot, interaction: &CommandInteraction) -> CreateAutocompleteResponse {
-    println!("{:?}", interaction);
     for option in interaction.data.options().iter() {
         match option {
             ResolvedOption {
