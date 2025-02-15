@@ -10,7 +10,7 @@ use discord::bot::Bot;
 use global::channels::respond_to_message::{self};
 use global::channels::wake_draw_task::{self};
 
-use global::generation_options::{base_model, lora};
+use global::generation_options::{lora, model};
 use serenity::prelude::*;
 use tokio;
 
@@ -27,7 +27,7 @@ async fn main() {
     let (draw_task_sender, draw_task_receiver) = wake_draw_task::make();
     draw_task::start(database.clone(), draw_task_receiver, sender);
 
-    let models = Arc::new(RwLock::new(base_model::get().await));
+    let models = Arc::new(RwLock::new(model::get().await));
     let loras = Arc::new(RwLock::new(lora::get().await));
 
     let mut client = Client::builder(discord_token, intents)
