@@ -1,6 +1,8 @@
 use std::time::Duration;
 
-use serenity::all::{CommandInteraction, ComponentInteractionCollector};
+use serenity::all::{
+    CommandInteraction, ComponentInteractionCollector, ResolvedOption, ResolvedValue,
+};
 use serenity::futures::StreamExt;
 use serenity::prelude::*;
 
@@ -12,13 +14,28 @@ use super::respond;
 pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
     respond::init(&ctx, &command).await;
 
-    let (message, mut page_index) = match respond::model_page(0, &bot, &ctx, &command).await {
-        Ok(message) => message,
-        Err(err) => {
-            println!("{}", err);
-            return;
+    let mut initial_page = 0;
+    for option in command.data.options().iter() {
+        match option {
+            ResolvedOption {
+                value: ResolvedValue::Integer(value),
+                name: "page",
+                ..
+            } => {
+                initial_page = (value - 1).max(0) as usize;
+            }
+            _ => {}
         }
-    };
+    }
+
+    let (message, mut page_index) =
+        match respond::model_page(initial_page, &bot, &ctx, &command).await {
+            Ok(message) => message,
+            Err(err) => {
+                println!("{}", err);
+                return;
+            }
+        };
 
     let mut interaction_stream = ComponentInteractionCollector::new(&ctx.shard)
         .timeout(Duration::from_secs(60 * 10))

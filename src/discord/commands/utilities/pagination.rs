@@ -10,14 +10,26 @@ enum Page {
     Only,
 }
 
+fn clamp_page_index(page_index: usize, item_count: usize) -> usize {
+    let max_index = item_count.saturating_sub(1) / 5;
+
+    page_index.min(max_index)
+}
+
 pub fn page<'a, T>(items: &'a Vec<T>, page_index: usize) -> Vec<&T>
 where
     &'a T: Sized,
 {
-    items.iter().skip(page_index * 5).take(5).collect()
+    items
+        .iter()
+        .skip(clamp_page_index(page_index, items.len()) * 5)
+        .take(5)
+        .collect()
 }
 
 pub fn buttons(page_index: usize, item_count: usize, disabled: bool) -> CreateActionRow {
+    let page_index = clamp_page_index(page_index, item_count);
+
     let items_seen = (page_index + 1) * 5;
     let page = match (page_index, item_count <= items_seen) {
         (0, false) => Page::First,
@@ -55,6 +67,8 @@ pub fn matches(
     page_index: usize,
     item_count: usize,
 ) -> Option<usize> {
+    let page_index = clamp_page_index(page_index, item_count);
+
     if !interaction.data.custom_id.as_str().starts_with("set-page:") {
         return None;
     }
