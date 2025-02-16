@@ -51,11 +51,16 @@ impl DrawProfile {
                 `active`
             )
             VALUES (?, ?, ?, ?)
+            ON CONFLICT DO
+            UPDATE
+            SET
+                `options` = ?
             "#,
             self.name,
             options,
             user_id,
             false,
+            options,
         )
         .execute(database)
         .await;
