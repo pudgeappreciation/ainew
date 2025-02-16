@@ -31,7 +31,7 @@ async fn get_options(bot: &Bot, interaction: &CommandInteraction) -> CreateAutoc
         }
     }
 
-    return CreateAutocompleteResponse::new();
+    CreateAutocompleteResponse::new()
 }
 
 pub async fn autocomplete(bot: &Bot, ctx: Context, interaction: CommandInteraction) {
