@@ -60,6 +60,7 @@ impl EventHandler for Bot {
                         commands::draw::create(),
                         commands::loras::create(),
                         commands::models::create(),
+                        commands::draw_profile::create(),
                     ],
                 )
                 .await;
@@ -74,6 +75,7 @@ impl EventHandler for Bot {
                     commands::draw::create(),
                     commands::loras::create(),
                     commands::models::create(),
+                    commands::draw_profile::create(),
                 ],
             )
             .await;

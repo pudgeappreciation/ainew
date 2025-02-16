@@ -1,5 +1,7 @@
 pub mod options;
 
+use serenity::all::UserId;
+
 use options::Options;
 
 #[derive(Debug)]
