@@ -1,13 +1,8 @@
-mod model;
-mod sampler;
-mod scheduler;
-mod size;
-
 use serenity::all::{
     CommandInteraction, Context, CreateAutocompleteResponse, ResolvedOption, ResolvedValue,
 };
 
-use crate::discord::bot::Bot;
+use crate::discord::{bot::Bot, commands::utilities};
 
 async fn get_options(bot: &Bot, interaction: &CommandInteraction) -> CreateAutocompleteResponse {
     for option in interaction.data.options().iter() {
@@ -16,22 +11,22 @@ async fn get_options(bot: &Bot, interaction: &CommandInteraction) -> CreateAutoc
                 value: ResolvedValue::Autocomplete { kind: _, value: _ },
                 name: "model",
                 ..
-            } => return model::handle(bot, interaction).await,
+            } => return utilities::autocomplete::model(bot, interaction).await,
             ResolvedOption {
                 value: ResolvedValue::Autocomplete { kind: _, value: _ },
                 name: "size",
                 ..
-            } => return size::handle(),
+            } => return utilities::autocomplete::size(),
             ResolvedOption {
                 value: ResolvedValue::Autocomplete { kind: _, value: _ },
                 name: "sampler",
                 ..
-            } => return sampler::handle(bot).await,
+            } => return utilities::autocomplete::sampler(bot).await,
             ResolvedOption {
                 value: ResolvedValue::Autocomplete { kind: _, value: _ },
                 name: "scheduler",
                 ..
-            } => return scheduler::handle(bot).await,
+            } => return utilities::autocomplete::scheduler(bot).await,
             _ => {}
         }
     }
