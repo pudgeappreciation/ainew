@@ -4,7 +4,10 @@ use serenity::all::{
 };
 
 use crate::{
-    discord::{bot::Bot, commands::utilities::pagination},
+    discord::{
+        bot::Bot,
+        commands::utilities::{copy_modal, pagination},
+    },
     global::draw_profile::DrawProfile,
 };
 
@@ -38,6 +41,7 @@ pub async fn profile_page(
         .content("")
         .embeds(embeds)
         .components(vec![
+            copy_modal::buttons(&page).await,
             active::buttons(page).await,
             pagination::buttons(page_index, profiles.len(), false),
         ]);

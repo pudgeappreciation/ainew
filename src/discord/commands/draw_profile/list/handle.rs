@@ -2,7 +2,8 @@ use std::time::Duration;
 
 use serenity::{
     all::{
-        CommandInteraction, ComponentInteractionCollector, Context, ResolvedOption, ResolvedValue,
+        CommandInteraction, ComponentInteractionCollector, Context, InputTextStyle, ResolvedOption,
+        ResolvedValue,
     },
     futures::StreamExt,
 };
@@ -10,7 +11,10 @@ use serenity::{
 use crate::{
     discord::{
         bot::Bot,
-        commands::{draw_profile::list::active, utilities::pagination},
+        commands::{
+            draw_profile::list::active,
+            utilities::{copy_modal, pagination},
+        },
     },
     global::draw_profile::DrawProfile,
 };
@@ -64,6 +68,19 @@ pub async fn handle<'a>(
             page_index = new_index;
             respond::update_pagination(page_index, &bot, &ctx, &command).await;
             _ = respond::profile_page(page_index, &bot, &ctx, &command).await;
+        } else if let Some(profile) = copy_modal::matches(interaction.data.custom_id.as_str()) {
+            let maybe_profile = DrawProfile::get(command.user.id, &profile, &bot.database).await;
+            let Ok(Some(profile)) = maybe_profile else {
+                continue;
+            };
+
+            copy_modal::handle(
+                &ctx,
+                format!("/profile new\n{}", profile.to_command_options()),
+                InputTextStyle::Paragraph,
+                &interaction,
+            )
+            .await;
         } else if let Some(profile) = active::matches(interaction.data.custom_id.as_str()) {
             active::handle(ctx, &interaction).await;
             _ = DrawProfile::set_active(Some(profile), command.user.id, &bot.database).await;

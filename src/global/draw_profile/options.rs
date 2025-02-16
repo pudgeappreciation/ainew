@@ -174,4 +174,50 @@ impl Options {
             .push_bold("Cfg Scale: ")
             .push_line_safe(&self.cfg_scale.to_string());
     }
+
+    pub fn to_command_options(&self) -> String {
+        let mut command = String::new();
+
+        if let Some(prompt_head) = &self.prompt_head {
+            command.push_str("\nprompt_head:");
+            command.push_str(prompt_head);
+        };
+        if let Some(prompt_tail) = &self.prompt_tail {
+            command.push_str("\nprompt_tail:");
+            command.push_str(prompt_tail);
+        };
+        if let Some(negative_prompt_head) = &self.negative_prompt_head {
+            command.push_str("\nnegative_prompt_head:");
+            command.push_str(negative_prompt_head);
+        };
+        if let Some(negative_prompt_tail) = &self.negative_prompt_tail {
+            command.push_str("\nnegative_prompt_tail:");
+            command.push_str(negative_prompt_tail);
+        };
+
+        command.push_str("\nsampler:");
+        command.push_str(&self.sampler);
+        command.push_str("\nscheduler:");
+        command.push_str(&self.scheduler);
+
+        if !self.model.is_empty() {
+            command.push_str("\nmodel:");
+            command.push_str(&self.model);
+        }
+
+        if let Some(vae) = &self.vae {
+            command.push_str("\nvae:");
+            command.push_str(vae);
+        };
+
+        command.push_str("\nsteps:");
+        command.push_str(&self.steps.to_string());
+        command.push_str(&format!("\nsize:{}x{}", self.width, self.height));
+        command.push_str("\nclip_skip:");
+        command.push_str(&self.clip_skip.to_string());
+        command.push_str("\ncfg_scale:");
+        command.push_str(&self.cfg_scale.to_string());
+
+        command
+    }
 }

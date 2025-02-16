@@ -5,6 +5,8 @@ use sqlx::{Pool, Sqlite};
 
 use options::Options;
 
+use crate::discord::commands::utilities::copy_modal::CopyButtonId;
+
 #[derive(Debug)]
 pub struct DrawProfile {
     pub name: String,
@@ -33,6 +35,12 @@ impl TryFrom<DbDrawProfile> for DrawProfile {
             active: value.active,
             name: value.name,
         })
+    }
+}
+
+impl CopyButtonId for DrawProfile {
+    fn id(&self) -> String {
+        self.name.clone()
     }
 }
 
@@ -78,6 +86,18 @@ impl DrawProfile {
         CreateEmbed::new()
             .title(&self.name)
             .description(content.build())
+    }
+
+    pub fn to_command_options(&self) -> String {
+        let mut command = format!("profile_name:{}", self.name);
+
+        if self.active {
+            command.push_str("\nactive:True");
+        }
+
+        command.push_str(&self.options.to_command_options());
+
+        command
     }
 
     pub async fn save(&self, database: &Pool<Sqlite>) -> Result<(), ()> {
@@ -179,6 +199,42 @@ impl DrawProfile {
                 .into_iter()
                 .filter_map(|profile| profile.try_into().ok())
                 .collect()),
+            Err(_) => Err(()),
+        }
+    }
+
+    pub async fn get(
+        user_id: UserId,
+        name: &str,
+        database: &Pool<Sqlite>,
+    ) -> Result<Option<DrawProfile>, ()> {
+        let user_id = user_id.get() as i64;
+
+        let result = sqlx::query_as!(
+            DbDrawProfile,
+            r#"
+            SELECT
+                `name`,
+                `options`,
+                `user_id`,
+                `active`
+            FROM
+                `user_draw_profiles`
+            WHERE
+                `user_id` = ?
+                AND `name` = ?
+            "#,
+            user_id,
+            name,
+        )
+        .fetch_optional(database)
+        .await;
+
+        match result {
+            Ok(profile) => match profile {
+                Some(profile) => Ok(profile.try_into().ok()),
+                None => Ok(None),
+            },
             Err(_) => Err(()),
         }
     }
