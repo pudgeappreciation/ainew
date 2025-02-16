@@ -1,4 +1,4 @@
-use super::new;
+use super::{delete, new};
 
 use serenity::all::{CommandInteraction, Context, ResolvedOption, ResolvedValue};
 
@@ -7,6 +7,11 @@ use crate::discord::bot::Bot;
 pub async fn handle<'a>(bot: &Bot, ctx: Context, interaction: CommandInteraction) {
     for option in interaction.data.options().iter() {
         match option {
+            ResolvedOption {
+                value: ResolvedValue::SubCommand(options),
+                name: "delete",
+                ..
+            } => return delete::handle(bot, &ctx, &options, &interaction).await,
             ResolvedOption {
                 value: ResolvedValue::SubCommand(options),
                 name: "new",

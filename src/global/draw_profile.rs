@@ -93,4 +93,27 @@ impl DrawProfile {
 
         result.map_err(|_| ())
     }
+
+    pub async fn remove(name: String, user_id: UserId, database: &Pool<Sqlite>) -> Result<(), ()> {
+        let user_id = user_id.get() as i64;
+
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM
+                `user_draw_profiles`
+            WHERE
+                `user_id` = ?
+                AND `name` = ?
+            "#,
+            user_id,
+            name,
+        )
+        .execute(database)
+        .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            _ => Err(()),
+        }
+    }
 }
