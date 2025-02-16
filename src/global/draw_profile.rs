@@ -70,4 +70,27 @@ impl DrawProfile {
             }
         }
     }
+
+    pub async fn get_available(
+        user_id: UserId,
+        database: &Pool<Sqlite>,
+    ) -> Result<Vec<String>, ()> {
+        let user_id = user_id.get() as i64;
+
+        let result = sqlx::query_scalar!(
+            r#"
+            SELECT
+                `name`
+            FROM
+                `user_draw_profiles`
+            WHERE
+                `user_id` = ?
+            "#,
+            user_id,
+        )
+        .fetch_all(database)
+        .await;
+
+        result.map_err(|_| ())
+    }
 }
