@@ -71,6 +71,36 @@ impl DrawProfile {
         }
     }
 
+    pub async fn set_active(
+        name: Option<String>,
+        user_id: UserId,
+        database: &Pool<Sqlite>,
+    ) -> Result<(), ()> {
+        let user_id = user_id.get() as i64;
+
+        let result = sqlx::query!(
+            r#"
+            UPDATE
+                `user_draw_profiles`
+            SET
+                `active` = (`user_draw_profiles`.`name` = ?) is not null
+            WHERE
+                `user_id` = ?
+            "#,
+            name,
+            user_id,
+        )
+        .execute(database)
+        .await;
+
+        println!("{:?}, {}", name, user_id);
+        println!("{:?}", result);
+        match result {
+            Ok(_) => Ok(()),
+            _ => Err(()),
+        }
+    }
+
     pub async fn get_available(
         user_id: UserId,
         database: &Pool<Sqlite>,

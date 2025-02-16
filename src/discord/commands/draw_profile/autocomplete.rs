@@ -2,7 +2,7 @@ use serenity::all::{CommandInteraction, Context, ResolvedOption, ResolvedValue};
 
 use crate::discord::bot::Bot;
 
-use super::{delete, new};
+use super::{delete, new, r#use};
 
 pub async fn autocomplete(bot: &Bot, ctx: Context, interaction: CommandInteraction) {
     let mut response = None;
@@ -19,6 +19,11 @@ pub async fn autocomplete(bot: &Bot, ctx: Context, interaction: CommandInteracti
                 name: "new",
                 ..
             } => Some(new::autocomplete(bot, options, &interaction).await),
+            ResolvedOption {
+                value: ResolvedValue::SubCommand(options),
+                name: "use",
+                ..
+            } => Some(r#use::autocomplete(bot, options, &interaction).await),
             _ => None,
         };
     }
