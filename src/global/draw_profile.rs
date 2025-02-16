@@ -112,7 +112,6 @@ impl DrawProfile {
             _ = Self::set_active(Some(self.name.clone()), self.user_id, database).await;
         }
 
-        println!("{:?}", result);
         match result {
             Ok(_) => Ok(()),
             Err(why) => {
@@ -145,8 +144,6 @@ impl DrawProfile {
         .execute(database)
         .await;
 
-        println!("{:?}, {}", name, user_id);
-        println!("{:?}", result);
         match result {
             Ok(_) => Ok(()),
             _ => Err(()),
