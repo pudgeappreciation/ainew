@@ -1,0 +1,75 @@
+use std::time::Duration;
+
+use serenity::{
+    all::{
+        CommandInteraction, ComponentInteractionCollector, Context, ResolvedOption, ResolvedValue,
+    },
+    futures::StreamExt,
+};
+
+use crate::{
+    discord::{
+        bot::Bot,
+        commands::{draw_profile::list::active, utilities::pagination},
+    },
+    global::draw_profile::DrawProfile,
+};
+
+use super::respond;
+
+async fn get_page_index<'a>(options: &'a Vec<ResolvedOption<'a>>) -> Option<usize> {
+    for option in options.iter() {
+        if let ResolvedOption {
+            name: "page",
+            value: ResolvedValue::Integer(value),
+            ..
+        } = option
+        {
+            return Some(*value as usize);
+        };
+    }
+
+    None
+}
+
+pub async fn handle<'a>(
+    bot: &Bot,
+    ctx: &Context,
+    options: &'a Vec<ResolvedOption<'a>>,
+    command: &CommandInteraction,
+) {
+    respond::init(&ctx, &command).await;
+
+    let initial_page = get_page_index(options).await.unwrap_or(0);
+
+    let (message, mut page_index) =
+        match respond::profile_page(initial_page, &bot, &ctx, &command).await {
+            Ok(message) => message,
+            Err(err) => {
+                println!("{}", err);
+                return;
+            }
+        };
+
+    let mut interaction_stream = ComponentInteractionCollector::new(&ctx.shard)
+        .timeout(Duration::from_secs(60 * 10))
+        .message_id(message.id)
+        .stream();
+
+    while let Some(interaction) = interaction_stream.next().await {
+        if let Some(new_index) =
+            pagination::matches(&interaction, page_index, bot.loras.read().await.len())
+        {
+            _ = interaction.defer(&ctx.http).await;
+            page_index = new_index;
+            respond::update_pagination(page_index, &bot, &ctx, &command).await;
+            _ = respond::profile_page(page_index, &bot, &ctx, &command).await;
+        } else if let Some(profile) = active::matches(interaction.data.custom_id.as_str()) {
+            active::handle(ctx, &interaction).await;
+            _ = DrawProfile::set_active(Some(profile), command.user.id, &bot.database).await;
+            _ = respond::profile_page(page_index, &bot, &ctx, &command).await;
+        }
+    }
+
+    println!("interaction loop ended");
+}

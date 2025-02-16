@@ -1,6 +1,6 @@
 pub mod options;
 
-use serenity::all::{ResolvedOption, ResolvedValue, UserId};
+use serenity::all::{CreateEmbed, MessageBuilder, ResolvedOption, ResolvedValue, UserId};
 use sqlx::{Pool, Sqlite};
 
 use options::Options;
@@ -66,6 +66,18 @@ impl DrawProfile {
             user_id: user_id,
             active,
         })
+    }
+
+    pub fn embed(&self) -> CreateEmbed {
+        let mut content = MessageBuilder::new();
+        content
+            .push_bold_safe("Active: ")
+            .push_line(if self.active { "True" } else { "False" });
+        self.options.embed(&mut content);
+
+        CreateEmbed::new()
+            .title(&self.name)
+            .description(content.build())
     }
 
     pub async fn save(&self, database: &Pool<Sqlite>) -> Result<(), ()> {

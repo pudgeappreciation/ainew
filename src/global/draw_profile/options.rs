@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serenity::all::{ResolvedOption, ResolvedValue};
+use serenity::all::{MessageBuilder, ResolvedOption, ResolvedValue};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Options {
@@ -115,5 +115,63 @@ impl Options {
         }
 
         options
+    }
+
+    pub fn embed(&self, content: &mut MessageBuilder) {
+        match &self.prompt_head {
+            Some(prompt_head) => content
+                .push_bold("Prompt Head: ")
+                .push_line_safe("")
+                .push_codeblock_safe(prompt_head, None),
+            None => content.push_bold("Prompt Head: ").push_line_safe("None"),
+        };
+
+        match &self.prompt_tail {
+            Some(prompt_tail) => content
+                .push_bold("Prompt Tail: ")
+                .push_line_safe("")
+                .push_codeblock_safe(prompt_tail, None),
+            None => content.push_bold("Prompt Tail: ").push_line_safe("None"),
+        };
+
+        match &self.negative_prompt_head {
+            Some(negative_prompt_head) => content
+                .push_bold("Negative_Prompt Head: ")
+                .push_line_safe("")
+                .push_codeblock_safe(negative_prompt_head, None),
+            None => content
+                .push_bold("Negative_Prompt Head: ")
+                .push_line_safe("None"),
+        };
+
+        match &self.negative_prompt_tail {
+            Some(negative_prompt_tail) => content
+                .push_bold("Negative Prompt Tail: ")
+                .push_line_safe("")
+                .push_codeblock_safe(negative_prompt_tail, None),
+            None => content
+                .push_bold("Negative Prompt Tail: ")
+                .push_line_safe("None"),
+        };
+
+        content
+            .push_bold("Sampler: ")
+            .push_line_safe(&self.sampler)
+            .push_bold("Scheduler: ")
+            .push_line_safe(&self.scheduler)
+            .push_bold("Model: ")
+            .push_line_safe(&self.model)
+            .push_bold("Vae: ")
+            .push_line_safe(self.vae.clone().unwrap_or(String::from("None")))
+            .push_bold("Steps: ")
+            .push_line_safe(&self.steps.to_string())
+            .push_bold("Width: ")
+            .push_line_safe(&self.width.to_string())
+            .push_bold("Height: ")
+            .push_line_safe(&self.height.to_string())
+            .push_bold("Clip Skip: ")
+            .push_line_safe(&self.clip_skip.to_string())
+            .push_bold("Cfg Scale: ")
+            .push_line_safe(&self.cfg_scale.to_string());
     }
 }
