@@ -1,6 +1,7 @@
 pub mod options;
 
-use serenity::all::UserId;
+use serenity::all::{ResolvedOption, ResolvedValue, UserId};
+use sqlx::{Pool, Sqlite};
 
 use options::Options;
 
@@ -9,4 +10,64 @@ pub struct DrawProfile {
     pub name: String,
     pub user_id: UserId,
     pub options: Options,
+}
+
+impl DrawProfile {
+    pub fn new_from_command<'a>(
+        user_id: UserId,
+        options: &Vec<ResolvedOption<'a>>,
+    ) -> Option<DrawProfile> {
+        let mut name = None;
+
+        for option in options.iter() {
+            match option {
+                ResolvedOption {
+                    value: ResolvedValue::String(value),
+                    name: "profile_name",
+                    ..
+                } => name = Some(value.to_string()),
+                _ => {}
+            }
+        }
+
+        Some(DrawProfile {
+            name: name?,
+            options: Options::new_from_command(options),
+            user_id: user_id,
+        })
+    }
+
+    pub async fn save(&self, database: &Pool<Sqlite>) -> Result<(), ()> {
+        let user_id = self.user_id.get() as i64;
+
+        let options = serde_json::to_string(&self.options).map_err(|_| ())?;
+
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO `user_draw_profiles` (
+                `name`,
+                `options`,
+                `user_id`,
+                `active`
+            )
+            VALUES (?, ?, ?, ?)
+            "#,
+            self.name,
+            options,
+            user_id,
+            false,
+        )
+        .execute(database)
+        .await;
+
+        println!("{:?}", result);
+        match result {
+            Ok(_) => Ok(()),
+            Err(why) => {
+                println!("Cannot save profile: {why}");
+
+                Err(())
+            }
+        }
+    }
 }

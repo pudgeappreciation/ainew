@@ -37,11 +37,13 @@ impl EventHandler for Bot {
                 "draw" => commands::draw::handle(self, ctx, command).await,
                 "loras" => commands::loras::handle(self, ctx, command).await,
                 "models" => commands::models::handle(self, ctx, command).await,
+                "profile" => commands::draw_profile::handle(self, ctx, command).await,
                 _ => println!("Command not registered"),
             };
         } else if let Interaction::Autocomplete(autocomplete) = interaction {
             match autocomplete.data.name.as_str() {
                 "draw" => commands::draw::autocomplete(self, ctx, autocomplete).await,
+                "profile" => commands::draw_profile::autocomplete(self, ctx, autocomplete).await,
                 _ => println!("Autocomplete not registered"),
             };
         }
