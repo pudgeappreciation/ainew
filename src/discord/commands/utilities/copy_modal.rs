@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use serenity::all::{
     ComponentInteraction, Context, CreateActionRow, CreateButton, CreateInputText,
-    CreateQuickModal, ReactionType,
+    CreateQuickModal, InputTextStyle, ReactionType,
 };
 use tokio::time::timeout;
 
@@ -50,21 +50,20 @@ pub fn matches(id: &str) -> Option<String> {
     id.get(11..).map(|value| value.to_string())
 }
 
-pub async fn handle(ctx: &Context, value: String, interaction: &ComponentInteraction) {
+pub async fn handle(
+    ctx: &Context,
+    value: String,
+    mode: InputTextStyle,
+    interaction: &ComponentInteraction,
+) {
     let ctx = ctx.clone();
     let interaction = interaction.clone();
 
     tokio::spawn(async move {
         let response = interaction.quick_modal(
             &ctx,
-            CreateQuickModal::new("Value to copy (for mobile)").field(
-                CreateInputText::new(
-                    serenity::all::InputTextStyle::Short,
-                    "Value",
-                    "value-response",
-                )
-                .value(value),
-            ),
+            CreateQuickModal::new("Value to copy (for mobile)")
+                .field(CreateInputText::new(mode, "Value", "value-response").value(value)),
         );
 
         let response = timeout(Duration::from_secs(60 * 15), response)
