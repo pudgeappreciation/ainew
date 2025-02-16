@@ -10,6 +10,30 @@ pub struct DrawProfile {
     pub name: String,
     pub user_id: UserId,
     pub options: Options,
+    pub active: bool,
+}
+
+#[derive(Debug)]
+struct DbDrawProfile {
+    pub name: String,
+    pub user_id: i64,
+    pub options: String,
+    pub active: bool,
+}
+
+impl TryFrom<DbDrawProfile> for DrawProfile {
+    type Error = ();
+
+    fn try_from(value: DbDrawProfile) -> Result<Self, Self::Error> {
+        let options: Options = serde_json::from_str(&value.options).map_err(|_| ())?;
+
+        Ok(Self {
+            options,
+            user_id: UserId::new(value.user_id as u64),
+            active: value.active,
+            name: value.name,
+        })
+    }
 }
 
 impl DrawProfile {
@@ -18,6 +42,7 @@ impl DrawProfile {
         options: &Vec<ResolvedOption<'a>>,
     ) -> Option<DrawProfile> {
         let mut name = None;
+        let mut active = false;
 
         for option in options.iter() {
             match option {
@@ -26,6 +51,11 @@ impl DrawProfile {
                     name: "profile_name",
                     ..
                 } => name = Some(value.to_string()),
+                ResolvedOption {
+                    value: ResolvedValue::Boolean(value),
+                    name: "active",
+                    ..
+                } => active = *value,
                 _ => {}
             }
         }
@@ -34,6 +64,7 @@ impl DrawProfile {
             name: name?,
             options: Options::new_from_command(options),
             user_id: user_id,
+            active,
         })
     }
 
@@ -64,6 +95,10 @@ impl DrawProfile {
         )
         .execute(database)
         .await;
+
+        if self.active {
+            _ = Self::set_active(Some(self.name.clone()), self.user_id, database).await;
+        }
 
         println!("{:?}", result);
         match result {
@@ -109,13 +144,17 @@ impl DrawProfile {
     pub async fn get_available(
         user_id: UserId,
         database: &Pool<Sqlite>,
-    ) -> Result<Vec<String>, ()> {
+    ) -> Result<Vec<DrawProfile>, ()> {
         let user_id = user_id.get() as i64;
 
-        let result = sqlx::query_scalar!(
+        let result = sqlx::query_as!(
+            DbDrawProfile,
             r#"
             SELECT
-                `name`
+                `name`,
+                `options`,
+                `user_id`,
+                `active`
             FROM
                 `user_draw_profiles`
             WHERE
@@ -126,7 +165,13 @@ impl DrawProfile {
         .fetch_all(database)
         .await;
 
-        result.map_err(|_| ())
+        match result {
+            Ok(profiles) => Ok(profiles
+                .into_iter()
+                .filter_map(|profile| profile.try_into().ok())
+                .collect()),
+            Err(_) => Err(()),
+        }
     }
 
     pub async fn remove(name: String, user_id: UserId, database: &Pool<Sqlite>) -> Result<(), ()> {

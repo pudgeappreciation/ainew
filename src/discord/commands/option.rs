@@ -11,3 +11,7 @@ pub fn string(name: impl Into<String>, description: impl Into<String>) -> Create
 pub fn number(name: impl Into<String>, description: impl Into<String>) -> CreateCommandOption {
     CreateCommandOption::new(CommandOptionType::Number, name, description)
 }
+
+pub fn bool(name: impl Into<String>, description: impl Into<String>) -> CreateCommandOption {
+    CreateCommandOption::new(CommandOptionType::Boolean, name, description)
+}

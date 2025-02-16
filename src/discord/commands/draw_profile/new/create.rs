@@ -11,6 +11,10 @@ pub fn create() -> CreateCommandOption {
                 .required(true)
                 .set_autocomplete(true),
         )
+        .add_sub_option(
+            option::bool("active", "Set this as your active profile (default false)")
+                .required(true),
+        )
         .add_sub_option(option::string(
             "prompt_head",
             "The tokens to prepend to the prompt",

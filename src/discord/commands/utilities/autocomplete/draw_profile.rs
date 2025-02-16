@@ -8,6 +8,8 @@ pub async fn handle(bot: &Bot, interaction: &CommandInteraction) -> CreateAutoco
     for profile in DrawProfile::get_available(interaction.user.id, &bot.database)
         .await
         .unwrap_or_else(|_| Vec::new())
+        .into_iter()
+        .map(|profile| profile.name)
     {
         response = response.add_string_choice(profile.clone(), profile);
     }
