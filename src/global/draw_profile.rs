@@ -123,7 +123,7 @@ impl DrawProfile {
             UPDATE
                 `user_draw_profiles`
             SET
-                `active` = (`user_draw_profiles`.`name` = ?) is not null
+                `active` = COALESCE(`user_draw_profiles`.`name` = ?, false)
             WHERE
                 `user_id` = ?
             "#,
