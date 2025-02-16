@@ -3,9 +3,13 @@ use serenity::all::{CommandOptionType, CreateCommandOption};
 use crate::discord::commands::option;
 
 pub fn create() -> CreateCommandOption {
-    CreateCommandOption::new(CommandOptionType::SubCommand, "new", "Create a new profile")
+    let description = "Create a new profile or update an existing one";
+
+    CreateCommandOption::new(CommandOptionType::SubCommand, "new", description)
         .add_sub_option(
-            option::string("profile_name", "The name of the new profile").required(true),
+            option::string("profile_name", "The name of the profile")
+                .required(true)
+                .set_autocomplete(true),
         )
         .add_sub_option(option::string(
             "prompt_head",

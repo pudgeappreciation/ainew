@@ -13,6 +13,11 @@ pub async fn autocomplete<'a>(
         match option {
             ResolvedOption {
                 value: ResolvedValue::Autocomplete { kind: _, value: _ },
+                name: "profile_name",
+                ..
+            } => return utilities::autocomplete::draw_profile(bot, interaction).await,
+            ResolvedOption {
+                value: ResolvedValue::Autocomplete { kind: _, value: _ },
                 name: "model",
                 ..
             } => return utilities::autocomplete::model(bot, interaction).await,
