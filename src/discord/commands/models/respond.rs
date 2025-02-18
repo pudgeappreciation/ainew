@@ -1,12 +1,16 @@
+mod model_page;
+
 use serenity::all::{
     CommandInteraction, Context, CreateInteractionResponse, CreateInteractionResponseMessage,
-    EditAttachments, EditInteractionResponse,
+    EditInteractionResponse,
 };
 
 use crate::discord::{
     bot::Bot,
     commands::utilities::{copy_modal, favorites, pagination},
 };
+
+pub use model_page::model_page;
 
 pub async fn init(ctx: &Context, command: &CommandInteraction) {
     let message = CreateInteractionResponseMessage::new()
@@ -19,38 +23,6 @@ pub async fn init(ctx: &Context, command: &CommandInteraction) {
     }
 }
 
-pub async fn model_page(
-    page_index: usize,
-    bot: &Bot,
-    ctx: &Context,
-    command: &CommandInteraction,
-) -> Result<(serenity::all::Message, usize), serenity::Error> {
-    let models = bot.models.read().await;
-    let page = pagination::page(&models, page_index);
-
-    let mut attachments = EditAttachments::new();
-    for attachment in page.iter().filter_map(|model| model.attachment()) {
-        attachments = attachments.add(attachment);
-    }
-
-    let embeds = page.iter().map(|model| model.embed()).collect();
-
-    let builder = EditInteractionResponse::new()
-        .content("")
-        .embeds(embeds)
-        .components(vec![
-            copy_modal::buttons(&page).await,
-            favorites::buttons(page, command.user.id, &bot.database).await,
-            pagination::buttons(page_index, models.len(), false),
-        ])
-        .attachments(attachments);
-
-    command
-        .edit_response(&ctx.http, builder)
-        .await
-        .map(|message| (message, page_index))
-}
-
 pub async fn update_favorites(
     page_index: usize,
     bot: &Bot,
@@ -58,16 +30,13 @@ pub async fn update_favorites(
     command: &CommandInteraction,
 ) {
     let models = bot.models.read().await;
-    let page = pagination::page(&models, page_index);
+    let Some(page) = pagination::page(models.iter(), page_index) else {
+        return;
+    };
 
     let builder = EditInteractionResponse::new().components(vec![
         copy_modal::buttons(&page).await,
-        favorites::buttons(
-            pagination::page(&models, page_index),
-            command.user.id,
-            &bot.database,
-        )
-        .await,
+        favorites::buttons(&page, command.user.id, &bot.database).await,
         pagination::buttons(page_index, models.len(), false),
     ]);
 
@@ -89,7 +58,7 @@ pub async fn update_pagination(
         .content("Loading...")
         .embeds(Vec::new())
         .components(vec![pagination::buttons(page_index, models.len(), false)])
-        .attachments(EditAttachments::new());
+        .clear_attachments();
 
     _ = command
         .edit_response(&ctx.http, builder)

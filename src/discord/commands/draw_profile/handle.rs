@@ -4,7 +4,7 @@ use serenity::all::{CommandInteraction, Context, ResolvedOption, ResolvedValue};
 
 use crate::discord::bot::Bot;
 
-pub async fn handle<'a>(bot: &Bot, ctx: Context, interaction: CommandInteraction) {
+pub async fn handle(bot: &Bot, ctx: Context, interaction: CommandInteraction) {
     for option in interaction.data.options().iter() {
         match option {
             ResolvedOption {

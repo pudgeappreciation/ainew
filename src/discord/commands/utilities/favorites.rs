@@ -5,10 +5,9 @@ use sqlx::{Pool, Sqlite};
 
 use crate::global::favorites::{self, Favorite, FavoritesString};
 
-pub async fn buttons<'a, T>(page: T, user: UserId, database: &Pool<Sqlite>) -> CreateActionRow
+pub async fn buttons<'a, T>(page: &Vec<T>, user: UserId, database: &Pool<Sqlite>) -> CreateActionRow
 where
-    T: IntoIterator,
-    T::Item: FavoritesString,
+    T: FavoritesString,
 {
     let buttons = favorites::favorited(page.into_iter(), user, database)
         .await

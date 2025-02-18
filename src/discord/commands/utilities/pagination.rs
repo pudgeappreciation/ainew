@@ -18,15 +18,18 @@ fn clamp_page_index(page_index: usize, item_count: usize) -> usize {
     page_index.min(max_page_index(item_count))
 }
 
-pub fn page<'a, T>(items: &'a Vec<T>, page_index: usize) -> Vec<&T>
+pub fn page<T>(items: T, page_index: usize) -> Option<Vec<T::Item>>
 where
-    &'a T: Sized,
+    T: ExactSizeIterator,
 {
-    items
-        .iter()
-        .skip(clamp_page_index(page_index, items.len()) * 5)
-        .take(5)
-        .collect()
+    let index = clamp_page_index(page_index, items.len());
+
+    let page: Vec<_> = items.skip(index).take(5).collect();
+
+    match page.is_empty() {
+        false => Some(page),
+        true => None,
+    }
 }
 
 pub fn buttons(page_index: usize, item_count: usize, disabled: bool) -> CreateActionRow {

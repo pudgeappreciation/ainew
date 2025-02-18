@@ -2,7 +2,7 @@ use serenity::all::{ComponentInteraction, Context, CreateActionRow, CreateButton
 
 use crate::global::draw_profile::DrawProfile;
 
-pub async fn buttons(page: Vec<&DrawProfile>) -> CreateActionRow {
+pub async fn buttons(page: &Vec<&DrawProfile>) -> CreateActionRow {
     let buttons = page
         .iter()
         .map(|item| match item.active {

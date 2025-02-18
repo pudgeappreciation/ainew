@@ -12,7 +12,7 @@ use crate::discord::commands::utilities::{copy_modal, favorites, pagination};
 
 use super::respond;
 
-pub async fn handle<'a>(bot: &Bot, ctx: Context, command: CommandInteraction) {
+pub async fn handle(bot: &Bot, ctx: Context, command: CommandInteraction) {
     respond::init(&ctx, &command).await;
 
     let mut initial_page = 0;

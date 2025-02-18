@@ -19,7 +19,7 @@ where
     }
 }
 
-pub async fn buttons<T>(page: &[T]) -> CreateActionRow
+pub async fn buttons<T>(page: &Vec<T>) -> CreateActionRow
 where
     T: CopyButtonId,
 {
