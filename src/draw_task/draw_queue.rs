@@ -7,6 +7,7 @@ use crate::global::draw_request::DrawRequest;
 struct DbDrawRequest {
     state: String,
     options: String,
+    original_options: String,
     user_id: i64,
     message_id: i64,
     channel_id: i64,
@@ -17,6 +18,7 @@ impl From<DbDrawRequest> for DrawRequest {
         DrawRequest {
             state: value.state,
             options: serde_json::from_str(&value.options).unwrap_or_default(),
+            original_options: serde_json::from_str(&value.original_options).unwrap_or_default(),
             user_id: UserId::new(value.user_id as u64),
             message_id: MessageId::new(value.message_id as u64),
             channel_id: ChannelId::new(value.channel_id as u64),
@@ -62,6 +64,7 @@ pub async fn get_next_request(database: &Pool<Sqlite>) -> Option<DrawRequest> {
         SELECT
             `state`,
             `options`,
+            `original_options`,
             `user_id`,
             `message_id`,
             `channel_id`

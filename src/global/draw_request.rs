@@ -8,20 +8,28 @@ use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, CommandInteraction, MessageId, UserId};
 use sqlx::{Pool, Sqlite};
 
+use super::draw_profile::DrawProfile;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DrawRequest {
     pub state: String,
     pub options: Options,
+    pub original_options: Options,
     pub user_id: UserId,
     pub message_id: MessageId,
     pub channel_id: ChannelId,
 }
 
 impl DrawRequest {
-    pub fn new_from_command(command: &CommandInteraction, message_id: MessageId) -> DrawRequest {
+    pub fn new_from_command(
+        command: &CommandInteraction,
+        message_id: MessageId,
+        profile: Option<DrawProfile>,
+    ) -> DrawRequest {
         DrawRequest {
             state: String::from("queued"),
-            options: Options::new_from_command(command),
+            options: Options::new_from_command(command, profile),
+            original_options: Options::new_from_command(command, None),
             user_id: command.user.id,
             message_id,
             channel_id: command.channel_id,
@@ -39,21 +47,24 @@ impl DrawRequest {
         let created_at = created_at.as_secs() as i64;
 
         let options = serde_json::to_string(&self.options).map_err(|_| ())?;
+        let original_options = serde_json::to_string(&self.original_options).map_err(|_| ())?;
 
         let result = sqlx::query!(
             r#"
             INSERT INTO `draw_requests` (
                 `state`,
                 `options`,
+                `original_options`,
                 `user_id`,
                 `message_id`,
                 `channel_id`,
                 `created_at`
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             "#,
             self.state,
             options,
+            original_options,
             user_id,
             message_id,
             channel_id,

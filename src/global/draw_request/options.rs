@@ -2,6 +2,8 @@ use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use serenity::all::{CommandInteraction, ResolvedOption, ResolvedValue};
 
+use crate::global::draw_profile::DrawProfile;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Options {
     pub prompt: String,
@@ -37,9 +39,29 @@ impl Default for Options {
     }
 }
 
+impl From<&DrawProfile> for Options {
+    fn from(value: &DrawProfile) -> Self {
+        Self {
+            sampler: value.options.sampler.clone(),
+            scheduler: value.options.scheduler.clone(),
+            model: value.options.model.clone(),
+            vae: value.options.vae.clone(),
+            steps: value.options.steps,
+            width: value.options.width,
+            height: value.options.height,
+            clip_skip: value.options.clip_skip,
+            cfg_scale: value.options.cfg_scale,
+            ..Default::default()
+        }
+    }
+}
+
 impl Options {
-    pub fn new_from_command(command: &CommandInteraction) -> Options {
-        let mut options = Options::default();
+    pub fn new_from_command(command: &CommandInteraction, profile: Option<DrawProfile>) -> Options {
+        let mut options: Options = profile
+            .as_ref()
+            .map(|profile| profile.into())
+            .unwrap_or_default();
 
         for option in command.data.options().iter() {
             match option {
@@ -107,6 +129,11 @@ impl Options {
                 _ => {}
             }
         }
+
+        if let Some(profile) = profile.as_ref() {
+            options.prompt = profile.wrap_prompt(options.prompt);
+            options.negative_prompt = profile.wrap_negative_prompt(options.negative_prompt);
+        };
 
         options
     }

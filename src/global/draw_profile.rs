@@ -76,6 +76,30 @@ impl DrawProfile {
         })
     }
 
+    pub fn wrap_prompt(&self, mut prompt: String) -> String {
+        if let Some(head) = &self.options.prompt_head {
+            prompt = format!("{}, {}", head, prompt);
+        };
+
+        if let Some(tail) = &self.options.prompt_tail {
+            prompt = format!("{}, {}", prompt, tail);
+        };
+
+        prompt
+    }
+
+    pub fn wrap_negative_prompt(&self, mut negative_prompt: String) -> String {
+        if let Some(head) = &self.options.negative_prompt_head {
+            negative_prompt = format!("{}, {}", head, negative_prompt);
+        };
+
+        if let Some(tail) = &self.options.negative_prompt_tail {
+            negative_prompt = format!("{}, {}", negative_prompt, tail);
+        };
+
+        negative_prompt
+    }
+
     pub fn embed(&self) -> CreateEmbed {
         let mut content = MessageBuilder::new();
         content
@@ -226,6 +250,40 @@ impl DrawProfile {
             "#,
             user_id,
             name,
+        )
+        .fetch_optional(database)
+        .await;
+
+        match result {
+            Ok(profile) => match profile {
+                Some(profile) => Ok(profile.try_into().ok()),
+                None => Ok(None),
+            },
+            Err(_) => Err(()),
+        }
+    }
+
+    pub async fn get_active(
+        user_id: UserId,
+        database: &Pool<Sqlite>,
+    ) -> Result<Option<DrawProfile>, ()> {
+        let user_id = user_id.get() as i64;
+
+        let result = sqlx::query_as!(
+            DbDrawProfile,
+            r#"
+            SELECT
+                `name`,
+                `options`,
+                `user_id`,
+                `active`
+            FROM
+                `user_draw_profiles`
+            WHERE
+                `user_id` = ?
+                AND `active` = true
+            "#,
+            user_id,
         )
         .fetch_optional(database)
         .await;
