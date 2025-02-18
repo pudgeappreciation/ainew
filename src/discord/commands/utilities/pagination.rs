@@ -24,7 +24,7 @@ where
 {
     let index = clamp_page_index(page_index, items.len());
 
-    let page: Vec<_> = items.skip(index).take(5).collect();
+    let page: Vec<_> = items.skip(index * 5).take(5).collect();
 
     match page.is_empty() {
         false => Some(page),
