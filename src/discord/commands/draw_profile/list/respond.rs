@@ -15,7 +15,7 @@ use super::active;
 
 pub async fn init(ctx: &Context, command: &CommandInteraction) {
     let message = CreateInteractionResponseMessage::new()
-        .content("Loading loras...")
+        .content("")
         .ephemeral(true);
     let initial_response = CreateInteractionResponse::Defer(message);
 
@@ -58,12 +58,14 @@ pub async fn update_pagination(
     ctx: &Context,
     command: &CommandInteraction,
 ) {
-    let loras = bot.loras.read().await;
+    let profiles = DrawProfile::get_available(command.user.id, &bot.database)
+        .await
+        .unwrap_or_default();
 
     let builder = EditInteractionResponse::new()
         .content("Loading...")
         .embeds(Vec::new())
-        .components(vec![pagination::buttons(page_index, loras.len(), false)])
+        .components(vec![pagination::buttons(page_index, profiles.len(), false)])
         .attachments(EditAttachments::new());
 
     _ = command
