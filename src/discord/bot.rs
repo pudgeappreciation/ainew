@@ -29,6 +29,30 @@ pub struct Bot {
     is_loop_running: AtomicBool,
 }
 
+impl Bot {
+    async fn register_commands(&self, ctx: &Context, guild_id: GuildId) {
+        let result = guild_id
+            .set_commands(
+                &ctx.http,
+                vec![
+                    commands::draw::create(),
+                    commands::loras::create(),
+                    commands::models::create(),
+                    commands::draw_profile::create(),
+                ],
+            )
+            .await;
+
+        match result {
+            Ok(_) => println!("Registered commands in server \"{}\"!", guild_id),
+            Err(why) => println!(
+                "Error registering commands in server \"{}\"! {}",
+                guild_id, why,
+            ),
+        }
+    }
+}
+
 #[async_trait]
 impl EventHandler for Bot {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
@@ -52,22 +76,15 @@ impl EventHandler for Bot {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        if let Ok(guild_id) = dotenvy::var("TEST_GUILD_ID") {
-            let guild_id = GuildId::new(guild_id.parse().expect("Expected a valid test guild ID"));
-
-            let commands = guild_id
-                .set_commands(
-                    &ctx.http,
-                    vec![
-                        commands::draw::create(),
-                        commands::loras::create(),
-                        commands::models::create(),
-                        commands::draw_profile::create(),
-                    ],
-                )
-                .await;
-
-            println!("I now have the following test guild slash commands: {commands:#?}");
+        if let Ok(guild_ids) = dotenvy::var("GUILD_IDS") {
+            for guild_id in guild_ids
+                .split(",")
+                .filter_map(|guild_id| guild_id.parse().ok())
+                .map(|guild_id| GuildId::new(guild_id))
+            {
+                println!("Registering commands in server \"{}\"!", guild_id);
+                self.register_commands(&ctx, guild_id).await;
+            }
         }
 
         if dotenvy::var("APP_ENV").unwrap_or("dev".to_string()) == "production" {
@@ -84,6 +101,8 @@ impl EventHandler for Bot {
 
             println!("I created the following global slash command: {guild_commands:#?}");
         }
+
+        self.draw_task.wake();
     }
 
     // We use the cache_ready event just in case some cache operation is required in whatever use
