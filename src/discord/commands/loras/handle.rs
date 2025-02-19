@@ -51,8 +51,14 @@ pub async fn handle(bot: &Bot, ctx: Context, command: CommandInteraction) {
             page_index = new_index;
             respond::update_pagination(page_index, &bot, &ctx, &command).await;
             _ = respond::lora_page(page_index, &bot, &ctx, &command).await;
-        } else if let Some(model) = copy_modal::matches(interaction.data.custom_id.as_str()) {
-            copy_modal::handle(&ctx, model, InputTextStyle::Short, &interaction).await;
+        } else if let Some(lora) = copy_modal::matches(interaction.data.custom_id.as_str()) {
+            copy_modal::handle(
+                &ctx,
+                format!("<lora:{}:1.0>", lora),
+                InputTextStyle::Short,
+                &interaction,
+            )
+            .await;
         } else if let Some(favorite) = favorites::matches(interaction.data.custom_id.as_str()) {
             favorites::handle(&ctx, &interaction).await;
             _ = favorite.save(command.user.id, &bot.database).await;

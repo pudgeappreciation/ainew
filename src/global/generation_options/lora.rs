@@ -43,7 +43,10 @@ impl Lora {
         let mut content = MessageBuilder::new();
         content
             .push_bold_safe("Name: ")
-            .push_safe(self.internal_name.clone());
+            .push_safe(self.internal_name.clone())
+            .push_line("")
+            .push_bold_safe("Value in Prompt: ")
+            .push_safe(format!("<lora:{}:1.0>", self.internal_name));
         if let Some(civitai_info) = self.civitai_info.clone() {
             content
                 .push_line("")
