@@ -1,41 +1,26 @@
 use serde::{Deserialize, Serialize};
 use serenity::all::{MessageBuilder, ResolvedOption, ResolvedValue};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+use crate::discord::{
+    commands::utilities::push_command_option::AddCommandOption,
+    message::body::name_value_pair::AddOptionalNameValuePair,
+};
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Options {
     pub prompt_head: Option<String>,
     pub prompt_tail: Option<String>,
     pub negative_prompt_head: Option<String>,
     pub negative_prompt_tail: Option<String>,
-    pub sampler: String,
-    pub scheduler: String,
-    pub model: String,
+    pub sampler: Option<String>,
+    pub scheduler: Option<String>,
+    pub model: Option<String>,
     pub vae: Option<String>,
-    pub steps: u8,
-    pub width: u32,
-    pub height: u32,
-    pub clip_skip: u8,
-    pub cfg_scale: f32,
-}
-
-impl Default for Options {
-    fn default() -> Self {
-        Options {
-            prompt_head: None,
-            prompt_tail: None,
-            negative_prompt_head: None,
-            negative_prompt_tail: None,
-            sampler: String::from("Euler a"),
-            scheduler: String::from("Automatic"),
-            model: String::from(""),
-            vae: None,
-            steps: 20,
-            width: 512,
-            height: 512,
-            clip_skip: 0,
-            cfg_scale: 7.5,
-        }
-    }
+    pub steps: Option<u8>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub clip_skip: Option<u8>,
+    pub cfg_scale: Option<f32>,
 }
 
 impl Options {
@@ -68,32 +53,32 @@ impl Options {
                     value: ResolvedValue::Integer(value),
                     name: "steps",
                     ..
-                } => options.steps = *value as u8,
+                } => options.steps = Some(*value as u8),
                 ResolvedOption {
                     value: ResolvedValue::Integer(value),
                     name: "clip_skip",
                     ..
-                } => options.clip_skip = *value as u8,
+                } => options.clip_skip = Some(*value as u8),
                 ResolvedOption {
                     value: ResolvedValue::Number(value),
                     name: "cfg_scale",
                     ..
-                } => options.cfg_scale = *value as f32,
+                } => options.cfg_scale = Some(*value as f32),
                 ResolvedOption {
                     value: ResolvedValue::String(value),
                     name: "sampler",
                     ..
-                } => options.sampler = value.to_string(),
+                } => options.sampler = Some(value.to_string()),
                 ResolvedOption {
                     value: ResolvedValue::String(value),
                     name: "scheduler",
                     ..
-                } => options.scheduler = value.to_string(),
+                } => options.scheduler = Some(value.to_string()),
                 ResolvedOption {
                     value: ResolvedValue::String(value),
                     name: "model",
                     ..
-                } => options.model = value.to_string(),
+                } => options.model = Some(value.to_string()),
                 ResolvedOption {
                     value: ResolvedValue::String(value),
                     name: "size",
@@ -104,8 +89,8 @@ impl Options {
                         .map(|dimension| dimension.parse::<u32>().ok());
                     match (dimensions.next(), dimensions.next()) {
                         (Some(Some(width)), Some(Some(height))) => {
-                            options.width = width;
-                            options.height = height;
+                            options.width = Some(width);
+                            options.height = Some(height);
                         }
                         _ => (),
                     }
@@ -118,105 +103,42 @@ impl Options {
     }
 
     pub fn embed(&self, content: &mut MessageBuilder) {
-        match &self.prompt_head {
-            Some(prompt_head) => content
-                .push_bold("Prompt Head: ")
-                .push_line_safe("")
-                .push_codeblock_safe(prompt_head, None),
-            None => content.push_bold("Prompt Head: ").push_line_safe("None"),
-        };
-
-        match &self.prompt_tail {
-            Some(prompt_tail) => content
-                .push_bold("Prompt Tail: ")
-                .push_line_safe("")
-                .push_codeblock_safe(prompt_tail, None),
-            None => content.push_bold("Prompt Tail: ").push_line_safe("None"),
-        };
-
-        match &self.negative_prompt_head {
-            Some(negative_prompt_head) => content
-                .push_bold("Negative_Prompt Head: ")
-                .push_line_safe("")
-                .push_codeblock_safe(negative_prompt_head, None),
-            None => content
-                .push_bold("Negative_Prompt Head: ")
-                .push_line_safe("None"),
-        };
-
-        match &self.negative_prompt_tail {
-            Some(negative_prompt_tail) => content
-                .push_bold("Negative Prompt Tail: ")
-                .push_line_safe("")
-                .push_codeblock_safe(negative_prompt_tail, None),
-            None => content
-                .push_bold("Negative Prompt Tail: ")
-                .push_line_safe("None"),
-        };
-
         content
-            .push_bold("Sampler: ")
-            .push_line_safe(&self.sampler)
-            .push_bold("Scheduler: ")
-            .push_line_safe(&self.scheduler)
-            .push_bold("Model: ")
-            .push_line_safe(&self.model)
-            .push_bold("Vae: ")
-            .push_line_safe(self.vae.clone().unwrap_or(String::from("None")))
-            .push_bold("Steps: ")
-            .push_line_safe(&self.steps.to_string())
-            .push_bold("Width: ")
-            .push_line_safe(&self.width.to_string())
-            .push_bold("Height: ")
-            .push_line_safe(&self.height.to_string())
-            .push_bold("Clip Skip: ")
-            .push_line_safe(&self.clip_skip.to_string())
-            .push_bold("Cfg Scale: ")
-            .push_line_safe(&self.cfg_scale.to_string());
+            .append_name_value_pair("Prompt Head: ", &self.prompt_head)
+            .append_name_value_pair("Prompt Tail: ", &self.prompt_tail)
+            .append_name_value_pair("Negative Prompt Head: ", &self.negative_prompt_head)
+            .append_name_value_pair("Negative Prompt Tail: ", &self.negative_prompt_tail)
+            .append_name_value_pair("Sampler: ", &self.sampler)
+            .append_name_value_pair("Scheduler: ", &self.scheduler)
+            .append_name_value_pair("Model: ", &self.model)
+            .append_name_value_pair("Vae: ", &self.vae)
+            .append_name_value_pair("Steps: ", &self.steps)
+            .append_name_value_pair("Width: ", &self.width)
+            .append_name_value_pair("Height: ", &self.height)
+            .append_name_value_pair("Clip Skip: ", &self.clip_skip)
+            .append_name_value_pair("Cfg Scale: ", &self.cfg_scale);
     }
 
     pub fn to_command_options(&self) -> String {
+        let size = match (&self.width, &self.height) {
+            (Some(width), Some(height)) => Some(format!("size:{}x{}", width, height)),
+            _ => None,
+        };
+
         let mut command = String::new();
-
-        if let Some(prompt_head) = &self.prompt_head {
-            command.push_str("\nprompt_head:");
-            command.push_str(prompt_head);
-        };
-        if let Some(prompt_tail) = &self.prompt_tail {
-            command.push_str("\nprompt_tail:");
-            command.push_str(prompt_tail);
-        };
-        if let Some(negative_prompt_head) = &self.negative_prompt_head {
-            command.push_str("\nnegative_prompt_head:");
-            command.push_str(negative_prompt_head);
-        };
-        if let Some(negative_prompt_tail) = &self.negative_prompt_tail {
-            command.push_str("\nnegative_prompt_tail:");
-            command.push_str(negative_prompt_tail);
-        };
-
-        command.push_str("\nsampler:");
-        command.push_str(&self.sampler);
-        command.push_str("\nscheduler:");
-        command.push_str(&self.scheduler);
-
-        if !self.model.is_empty() {
-            command.push_str("\nmodel:");
-            command.push_str(&self.model);
-        }
-
-        if let Some(vae) = &self.vae {
-            command.push_str("\nvae:");
-            command.push_str(vae);
-        };
-
-        command.push_str("\nsteps:");
-        command.push_str(&self.steps.to_string());
-        command.push_str(&format!("\nsize:{}x{}", self.width, self.height));
-        command.push_str("\nclip_skip:");
-        command.push_str(&self.clip_skip.to_string());
-        command.push_str("\ncfg_scale:");
-        command.push_str(&self.cfg_scale.to_string());
+        command
+            .append_command_option("prompt_head", &self.prompt_head)
+            .append_command_option("prompt_tail", &self.prompt_head)
+            .append_command_option("negative_prompt_head", &self.prompt_head)
+            .append_command_option("negative_prompt_tail", &self.prompt_head)
+            .append_command_option("sampler", &self.sampler)
+            .append_command_option("scheduler", &self.scheduler)
+            .append_command_option("model", &self.model)
+            .append_command_option("vae", &self.vae)
+            .append_command_option("steps", &self.steps)
+            .append_command_option("size", &size)
+            .append_command_option("clip_skip", &self.clip_skip)
+            .append_command_option("cfg_scale", &self.cfg_scale);
 
         command
     }

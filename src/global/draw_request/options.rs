@@ -42,15 +42,19 @@ impl Default for Options {
 impl From<&DrawProfile> for Options {
     fn from(value: &DrawProfile) -> Self {
         Self {
-            sampler: value.options.sampler.clone(),
-            scheduler: value.options.scheduler.clone(),
-            model: value.options.model.clone(),
+            sampler: value.options.sampler.clone().unwrap_or("Euler a".into()),
+            scheduler: value
+                .options
+                .scheduler
+                .clone()
+                .unwrap_or("Automatic".into()),
+            model: value.options.model.clone().unwrap_or_default(),
             vae: value.options.vae.clone(),
-            steps: value.options.steps,
-            width: value.options.width,
-            height: value.options.height,
-            clip_skip: value.options.clip_skip,
-            cfg_scale: value.options.cfg_scale,
+            steps: value.options.steps.unwrap_or(20),
+            width: value.options.width.unwrap_or(512),
+            height: value.options.height.unwrap_or(512),
+            clip_skip: value.options.clip_skip.unwrap_or(0),
+            cfg_scale: value.options.cfg_scale.unwrap_or(7.5),
             ..Default::default()
         }
     }

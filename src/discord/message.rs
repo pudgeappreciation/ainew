@@ -1,3 +1,4 @@
+pub mod body;
 mod finished_drawing;
 mod starting_drawing;
 
