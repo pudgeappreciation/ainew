@@ -70,7 +70,7 @@ impl Lora {
         embed = embed.description(content.build());
 
         if let Some(preview) = self.preview.clone() {
-            embed = embed.image(format!(
+            embed = embed.thumbnail(format!(
                 "attachment://{}.{}",
                 self.internal_name, preview.extension
             ));
