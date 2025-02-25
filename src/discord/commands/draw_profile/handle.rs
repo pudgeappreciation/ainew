@@ -1,4 +1,4 @@
-use super::{delete, list, new, r#use};
+use super::{delete, list, new, r#use, reset};
 
 use serenity::all::{CommandInteraction, Context, ResolvedOption, ResolvedValue};
 
@@ -22,6 +22,11 @@ pub async fn handle(bot: &Bot, ctx: Context, interaction: CommandInteraction) {
                 name: "new",
                 ..
             } => return new::handle(bot, &ctx, &options, &interaction).await,
+            ResolvedOption {
+                value: ResolvedValue::SubCommand(options),
+                name: "reset",
+                ..
+            } => return reset::handle(bot, &ctx, &options, &interaction).await,
             ResolvedOption {
                 value: ResolvedValue::SubCommand(options),
                 name: "use",
