@@ -10,10 +10,18 @@ pub async fn handle<'a>(
     options: &'a Vec<ResolvedOption<'a>>,
     interaction: &CommandInteraction,
 ) {
-    let Some(draw_profile) = DrawProfile::new_from_command(interaction.user.id, options) else {
+    let Some(mut draw_profile) = DrawProfile::new_from_command(interaction.user.id, options) else {
         respond::parse_failure(ctx, interaction).await;
 
         return;
+    };
+
+    if let Some(base) = DrawProfile::get(interaction.user.id, &draw_profile.name, &bot.database)
+        .await
+        .ok()
+        .flatten()
+    {
+        draw_profile = draw_profile.merge(&base);
     };
 
     match draw_profile.save(&bot.database).await {

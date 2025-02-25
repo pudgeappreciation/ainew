@@ -297,6 +297,12 @@ impl DrawProfile {
         }
     }
 
+    pub fn merge(mut self, other: &Self) -> Self {
+        self.options = self.options.merge(&other.options);
+
+        return self;
+    }
+
     pub async fn remove(name: String, user_id: UserId, database: &Pool<Sqlite>) -> Result<(), ()> {
         let user_id = user_id.get() as i64;
 

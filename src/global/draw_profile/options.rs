@@ -25,7 +25,7 @@ pub struct Options {
 
 impl Options {
     pub fn new_from_command<'a>(command_options: &Vec<ResolvedOption<'a>>) -> Options {
-        let mut options = Options::default();
+        let mut options = Self::default();
 
         for option in command_options.iter() {
             match option {
@@ -141,5 +141,27 @@ impl Options {
             .append_command_option("cfg_scale", &self.cfg_scale);
 
         command
+    }
+
+    pub fn merge(mut self, other: &Self) -> Self {
+        self.prompt_head = self.prompt_head.or(other.prompt_head.clone());
+        self.prompt_tail = self.prompt_tail.or(other.prompt_tail.clone());
+        self.negative_prompt_head = self
+            .negative_prompt_head
+            .or(other.negative_prompt_head.clone());
+        self.negative_prompt_tail = self
+            .negative_prompt_tail
+            .or(other.negative_prompt_tail.clone());
+        self.sampler = self.sampler.or(other.sampler.clone());
+        self.scheduler = self.scheduler.or(other.scheduler.clone());
+        self.model = self.model.or(other.model.clone());
+        self.vae = self.vae.or(other.vae.clone());
+        self.steps = self.steps.or(other.steps);
+        self.width = self.width.or(other.width);
+        self.height = self.height.or(other.height);
+        self.clip_skip = self.clip_skip.or(other.clip_skip);
+        self.cfg_scale = self.cfg_scale.or(other.cfg_scale);
+
+        return self;
     }
 }

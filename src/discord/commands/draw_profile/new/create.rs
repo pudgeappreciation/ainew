@@ -3,7 +3,7 @@ use serenity::all::{CommandOptionType, CreateCommandOption};
 use crate::discord::commands::option;
 
 pub fn create() -> CreateCommandOption {
-    let description = "Create a new profile or update an existing one";
+    let description = "Create a new profile or edit an existing one";
 
     CreateCommandOption::new(CommandOptionType::SubCommand, "new", description)
         .add_sub_option(
