@@ -32,13 +32,14 @@ async fn draw_session(database: &Pool<Sqlite>, responder: &RespondToMessage) {
                     message::finished_drawing(response, request.channel_id, request.message_id),
                     request.channel_id,
                 );
+                _ = request.complete(database).await;
             }
             Err(_) => {
                 println!("drawing failed");
+                _ = request.failed(database).await;
             }
         }
 
-        _ = request.complete(database).await;
         sleep(Duration::from_secs(1)).await;
     }
 }

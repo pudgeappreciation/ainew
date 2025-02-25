@@ -144,4 +144,23 @@ impl DrawRequest {
             Err(_) => Err(()),
         }
     }
+
+    pub async fn failed(&self, database: &Pool<Sqlite>) -> Result<(), ()> {
+        let message_id = self.message_id.get() as i64;
+        let result = sqlx::query!(
+            r#"
+            UPDATE `draw_requests`
+            SET `state` = 'failed'
+            WHERE `message_id` = ?
+            "#,
+            message_id,
+        )
+        .execute(database)
+        .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(_) => Err(()),
+        }
+    }
 }
