@@ -5,7 +5,7 @@ use crate::discord::commands::option;
 pub fn create() -> CreateCommandOption {
     let description = "Create a new profile or edit an existing one";
 
-    CreateCommandOption::new(CommandOptionType::SubCommand, "new", description)
+    CreateCommandOption::new(CommandOptionType::SubCommand, "set", description)
         .add_sub_option(
             option::string("profile_name", "The name of the profile")
                 .required(true)

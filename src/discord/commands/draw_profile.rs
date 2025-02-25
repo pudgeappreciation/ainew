@@ -1,7 +1,7 @@
 mod delete;
 mod list;
-mod new;
 mod reset;
+mod set;
 mod r#use;
 
 mod autocomplete;
