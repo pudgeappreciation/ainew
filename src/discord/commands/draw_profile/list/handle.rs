@@ -3,7 +3,6 @@ use std::time::Duration;
 use serenity::{
     all::{
         CommandInteraction, ComponentInteractionCollector, Context, InputTextStyle, ResolvedOption,
-        ResolvedValue,
     },
     futures::StreamExt,
 };
@@ -13,6 +12,7 @@ use crate::{
         bot::Bot,
         commands::{
             draw_profile::list::active,
+            option,
             utilities::{copy_modal, pagination},
         },
     },
@@ -20,21 +20,6 @@ use crate::{
 };
 
 use super::respond;
-
-async fn get_page_index<'a>(options: &'a Vec<ResolvedOption<'a>>) -> Option<usize> {
-    for option in options.iter() {
-        if let ResolvedOption {
-            name: "page",
-            value: ResolvedValue::Integer(value),
-            ..
-        } = option
-        {
-            return Some(*value as usize);
-        };
-    }
-
-    None
-}
 
 pub async fn handle<'a>(
     bot: &Bot,
@@ -44,7 +29,7 @@ pub async fn handle<'a>(
 ) {
     respond::init(&ctx, &command).await;
 
-    let initial_page = get_page_index(options).await.unwrap_or(0);
+    let initial_page = option::get_int("page", options.iter()).unwrap_or(0) as usize;
 
     let (message, mut page_index) =
         match respond::profile_page(initial_page, &bot, &ctx, &command).await {
@@ -83,7 +68,7 @@ pub async fn handle<'a>(
             .await;
         } else if let Some(profile) = active::matches(interaction.data.custom_id.as_str()) {
             active::handle(ctx, &interaction).await;
-            _ = DrawProfile::set_active(Some(profile), command.user.id, &bot.database).await;
+            _ = DrawProfile::set_active(Some(&profile), command.user.id, &bot.database).await;
             _ = respond::profile_page(page_index, &bot, &ctx, &command).await;
         }
     }

@@ -1,6 +1,9 @@
-use serenity::all::{CommandInteraction, Context, ResolvedOption, ResolvedValue, UserId};
+use serenity::all::{CommandInteraction, Context, ResolvedOption, UserId};
 
-use crate::{discord::bot::Bot, global::draw_profile::DrawProfile};
+use crate::{
+    discord::{bot::Bot, commands::option},
+    global::draw_profile::DrawProfile,
+};
 
 use super::respond;
 
@@ -8,21 +11,10 @@ pub async fn handle_inner<'a>(
     bot: &Bot,
     user_id: UserId,
     options: &'a Vec<ResolvedOption<'a>>,
-) -> Option<String> {
-    let mut profile = None;
+) -> Option<&'a str> {
+    let profile = option::get_string("profile_name", options.iter());
 
-    for option in options.iter() {
-        if let ResolvedOption {
-            name: "profile_name",
-            value: ResolvedValue::String(profile_name),
-            ..
-        } = option
-        {
-            profile = Some(profile_name.to_string());
-        };
-    }
-
-    match DrawProfile::set_active(profile.clone(), user_id, &bot.database).await {
+    match DrawProfile::set_active(profile, user_id, &bot.database).await {
         Ok(_) => profile,
         Err(_) => None,
     }

@@ -153,7 +153,7 @@ impl DrawProfile {
         .await;
 
         if self.active {
-            _ = Self::set_active(Some(self.name.clone()), self.user_id, database).await;
+            _ = Self::set_active(Some(&self.name), self.user_id, database).await;
         }
 
         match result {
@@ -167,7 +167,7 @@ impl DrawProfile {
     }
 
     pub async fn set_active(
-        name: Option<String>,
+        name: Option<&str>,
         user_id: UserId,
         database: &Pool<Sqlite>,
     ) -> Result<(), ()> {

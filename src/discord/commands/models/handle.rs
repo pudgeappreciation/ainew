@@ -1,13 +1,11 @@
 use std::time::Duration;
 
-use serenity::all::{
-    CommandInteraction, ComponentInteractionCollector, InputTextStyle, ResolvedOption,
-    ResolvedValue,
-};
+use serenity::all::{CommandInteraction, ComponentInteractionCollector, InputTextStyle};
 use serenity::futures::StreamExt;
 use serenity::prelude::*;
 
 use crate::discord::bot::Bot;
+use crate::discord::commands::option;
 use crate::discord::commands::utilities::{copy_modal, favorites, pagination};
 
 use super::respond;
@@ -15,19 +13,7 @@ use super::respond;
 pub async fn handle(bot: &Bot, ctx: Context, command: CommandInteraction) {
     respond::init(&ctx, &command).await;
 
-    let mut initial_page = 0;
-    for option in command.data.options().iter() {
-        match option {
-            ResolvedOption {
-                value: ResolvedValue::Integer(value),
-                name: "page",
-                ..
-            } => {
-                initial_page = (value - 1).max(0) as usize;
-            }
-            _ => {}
-        }
-    }
+    let initial_page = option::get_int("page", command.data.options().iter()).unwrap_or(0) as usize;
 
     let (message, mut page_index) =
         match respond::model_page(initial_page, &bot, &ctx, &command).await {

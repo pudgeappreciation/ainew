@@ -15,7 +15,7 @@ pub async fn cleared_active_profile(ctx: &Context, interaction: &CommandInteract
     }
 }
 
-pub async fn set_profile(profile_name: String, ctx: &Context, interaction: &CommandInteraction) {
+pub async fn set_profile(profile_name: &str, ctx: &Context, interaction: &CommandInteraction) {
     let message = CreateInteractionResponseMessage::new()
         .content(format!("Set profile \"{}\" as active", profile_name))
         .ephemeral(true);
