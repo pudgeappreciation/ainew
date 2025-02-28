@@ -1,4 +1,5 @@
 pub mod api_options;
+mod db;
 pub mod options;
 
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -9,6 +10,8 @@ use serenity::all::{ChannelId, CommandInteraction, MessageId, UserId};
 use sqlx::{Pool, Sqlite};
 
 use super::draw_profile::DrawProfile;
+
+pub use db::DbDrawRequest;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DrawRequest {
