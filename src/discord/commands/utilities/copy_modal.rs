@@ -19,6 +19,12 @@ where
     }
 }
 
+impl CopyButtonId for String {
+    fn id(&self) -> String {
+        self.clone()
+    }
+}
+
 pub async fn buttons<T>(page: &Vec<T>) -> CreateActionRow
 where
     T: CopyButtonId,
@@ -36,6 +42,20 @@ where
             };
             CreateButton::new(format!("copy-value:{}", page_item.id()))
                 .emoji(ReactionType::Unicode(String::from(emoji)))
+        })
+        .collect();
+
+    CreateActionRow::Buttons(buttons)
+}
+
+pub fn buttons_with_emoji<T>(page: &Vec<(T, ReactionType)>) -> CreateActionRow
+where
+    T: CopyButtonId,
+{
+    let buttons: Vec<_> = page
+        .iter()
+        .map(|(page_item, emoji)| {
+            CreateButton::new(format!("copy-value:{}", page_item.id())).emoji(emoji.clone())
         })
         .collect();
 

@@ -7,14 +7,16 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use chrono::{DateTime, Utc};
 use options::Options;
 use serde::{Deserialize, Serialize};
-use serenity::all::{ChannelId, CommandInteraction, MessageId, UserId};
+use serenity::all::{
+    ChannelId, CommandInteraction, CreateEmbed, MessageBuilder, MessageId, UserId,
+};
 use sqlx::{Pool, Sqlite};
 
 use super::draw_profile::DrawProfile;
 
 pub use db::DbDrawRequest;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DrawRequest {
     pub state: String,
     pub options: Options,
@@ -23,6 +25,20 @@ pub struct DrawRequest {
     pub message_id: MessageId,
     pub channel_id: ChannelId,
     pub created_at: DateTime<Utc>,
+}
+
+impl From<DrawRequest> for CreateEmbed {
+    fn from(value: DrawRequest) -> Self {
+        let mut content = MessageBuilder::new();
+
+        content
+            .push_bold_safe("Request made at: ")
+            .push_line_safe(value.created_at.format("%F %R").to_string())
+            .push_line_safe("");
+        value.options.embed(&mut content);
+
+        CreateEmbed::new().title("").description(content.build())
+    }
 }
 
 impl DrawRequest {
@@ -42,6 +58,14 @@ impl DrawRequest {
             channel_id: command.channel_id,
             created_at,
         }
+    }
+
+    pub fn to_command_options(&self) -> String {
+        let mut command = String::new();
+
+        command.push_str(&self.options.to_command_options());
+
+        command
     }
 
     pub async fn save(&self, database: &Pool<Sqlite>) -> Result<(), ()> {
@@ -88,6 +112,44 @@ impl DrawRequest {
 
                 Err(())
             }
+        }
+    }
+
+    pub async fn get_from_message_id(
+        message_id: MessageId,
+        database: &Pool<Sqlite>,
+    ) -> Result<Option<Self>, ()> {
+        let message_id = message_id.get() as i64;
+
+        let result = sqlx::query_as!(
+            DbDrawRequest,
+            r#"
+            SELECT
+                `state`,
+                `options`,
+                `original_options`,
+                `user_id`,
+                `message_id`,
+                `channel_id`,
+                `created_at`
+            FROM
+                `draw_requests`
+            WHERE
+                `message_id` = ?
+            "#,
+            message_id,
+        )
+        .fetch_optional(database)
+        .await;
+
+        match result {
+            Ok(Some(draw_request)) => Ok(DrawRequest::try_from(draw_request).ok()),
+            Err(why) => {
+                println!("Cannot respond to slash command: {why}");
+
+                Err(())
+            }
+            _ => Err(()),
         }
     }
 

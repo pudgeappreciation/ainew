@@ -36,6 +36,7 @@ impl Bot {
                 &ctx.http,
                 vec![
                     commands::draw::create(),
+                    commands::image_info::create(),
                     commands::loras::create(),
                     commands::models::create(),
                     commands::draw_profile::create(),
@@ -59,6 +60,7 @@ impl EventHandler for Bot {
         if let Interaction::Command(command) = interaction {
             match command.data.name.as_str() {
                 "draw" => commands::draw::handle(self, ctx, command).await,
+                "image_info" => commands::image_info::handle(self, ctx, command).await,
                 "loras" => commands::loras::handle(self, ctx, command).await,
                 "models" => commands::models::handle(self, ctx, command).await,
                 "profile" => commands::draw_profile::handle(self, ctx, command).await,

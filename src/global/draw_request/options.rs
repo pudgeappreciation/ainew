@@ -1,8 +1,16 @@
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
-use serenity::all::{CommandInteraction, ResolvedOption, ResolvedValue};
+use serenity::all::{CommandInteraction, MessageBuilder, ResolvedOption, ResolvedValue};
 
-use crate::global::draw_profile::DrawProfile;
+use crate::{
+    discord::{
+        commands::utilities::push_command_option::AddCommandOption,
+        message::body::{
+            name_value_pair::AddNameValuePair, optional_name_value_pair::AddOptionalNameValuePair,
+        },
+    },
+    global::draw_profile::DrawProfile,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Options {
@@ -140,5 +148,63 @@ impl Options {
         };
 
         options
+    }
+
+    pub fn embed(&self, content: &mut MessageBuilder) {
+        content
+            .push_bold_safe("Prompt: ")
+            .push_codeblock_safe(&self.prompt, None)
+            .push_bold_safe("Negative Prompt: ");
+
+        if self.negative_prompt.is_empty() {
+            content.push_line_safe("None");
+        } else {
+            content.push_codeblock_safe(&self.negative_prompt, None);
+        }
+
+        if self.model.is_empty() {
+            content.append_name_value("Model: ", &"N/A");
+        } else {
+            content.append_name_value("Model: ", &self.model);
+        }
+
+        content
+            .append_name_value("Sampler: ", &self.sampler)
+            .append_name_value("Scheduler: ", &self.scheduler)
+            .append_optional_name_value("Vae: ", &self.vae)
+            .append_name_value("Steps: ", &self.steps)
+            .append_name_value("Width: ", &self.width)
+            .append_name_value("Height: ", &self.height)
+            .append_name_value("Clip Skip: ", &self.clip_skip)
+            .append_name_value("Cfg Scale: ", &self.cfg_scale)
+            .append_name_value("Seed: ", &self.seed);
+    }
+
+    pub fn to_command_options(&self) -> String {
+        let mut command = String::new();
+        command.append_command_option("prompt", &Some(&self.prompt));
+
+        if !self.negative_prompt.is_empty() {
+            command.append_command_option("negative_prompt", &Some(&self.negative_prompt));
+        }
+
+        command.append_command_option(
+            "size",
+            &Some(format!("size:{}x{}", &self.width, &self.height)),
+        );
+
+        if !self.model.is_empty() {
+            command.append_command_option("model", &Some(&self.model));
+        }
+
+        command
+            .append_command_option("cfg_scale", &Some(&self.cfg_scale))
+            .append_command_option("steps", &Some(&self.steps))
+            .append_command_option("sampler", &Some(&self.sampler))
+            .append_command_option("scheduler", &Some(&self.scheduler))
+            .append_command_option("clip_skip", &Some(&self.clip_skip))
+            .append_command_option("seed", &Some(&self.seed));
+
+        command
     }
 }
