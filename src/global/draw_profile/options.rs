@@ -3,7 +3,7 @@ use serenity::all::{MessageBuilder, ResolvedOption, ResolvedValue};
 
 use crate::discord::{
     commands::utilities::push_command_option::AddCommandOption,
-    message::body::name_value_pair::AddOptionalNameValuePair,
+    message::body::optional_name_value_pair::AddOptionalNameValuePair,
 };
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -104,19 +104,19 @@ impl Options {
 
     pub fn embed(&self, content: &mut MessageBuilder) {
         content
-            .append_name_value_pair("Prompt Head: ", &self.prompt_head)
-            .append_name_value_pair("Prompt Tail: ", &self.prompt_tail)
-            .append_name_value_pair("Negative Prompt Head: ", &self.negative_prompt_head)
-            .append_name_value_pair("Negative Prompt Tail: ", &self.negative_prompt_tail)
-            .append_name_value_pair("Sampler: ", &self.sampler)
-            .append_name_value_pair("Scheduler: ", &self.scheduler)
-            .append_name_value_pair("Model: ", &self.model)
-            .append_name_value_pair("Vae: ", &self.vae)
-            .append_name_value_pair("Steps: ", &self.steps)
-            .append_name_value_pair("Width: ", &self.width)
-            .append_name_value_pair("Height: ", &self.height)
-            .append_name_value_pair("Clip Skip: ", &self.clip_skip)
-            .append_name_value_pair("Cfg Scale: ", &self.cfg_scale);
+            .append_optional_name_value("Prompt Head: ", &self.prompt_head)
+            .append_optional_name_value("Prompt Tail: ", &self.prompt_tail)
+            .append_optional_name_value("Negative Prompt Head: ", &self.negative_prompt_head)
+            .append_optional_name_value("Negative Prompt Tail: ", &self.negative_prompt_tail)
+            .append_optional_name_value("Sampler: ", &self.sampler)
+            .append_optional_name_value("Scheduler: ", &self.scheduler)
+            .append_optional_name_value("Model: ", &self.model)
+            .append_optional_name_value("Vae: ", &self.vae)
+            .append_optional_name_value("Steps: ", &self.steps)
+            .append_optional_name_value("Width: ", &self.width)
+            .append_optional_name_value("Height: ", &self.height)
+            .append_optional_name_value("Clip Skip: ", &self.clip_skip)
+            .append_optional_name_value("Cfg Scale: ", &self.cfg_scale);
     }
 
     pub fn to_command_options(&self) -> String {

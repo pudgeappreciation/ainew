@@ -1,37 +1,17 @@
 use serenity::all::MessageBuilder;
 
-pub trait OptionalNameValuePair {
-    fn append_to_builder(&self, name: &str, builder: &mut MessageBuilder);
-}
-
-impl<T> OptionalNameValuePair for Option<T>
+pub trait AddNameValuePair<T>
 where
     T: ToString,
 {
-    fn append_to_builder(&self, name: &str, builder: &mut MessageBuilder) {
-        match self {
-            Some(value) => builder
-                .push_bold_safe(name)
-                .push_line_safe(value.to_string()),
-            None => builder.push_bold_safe(name).push_line_safe("None"),
-        };
-    }
+    fn append_name_value(&mut self, name: &str, value: &T) -> &mut Self;
 }
 
-pub trait AddOptionalNameValuePair<T>
+impl<T> AddNameValuePair<T> for MessageBuilder
 where
-    T: OptionalNameValuePair,
+    T: ToString,
 {
-    fn append_name_value_pair(&mut self, name: &str, value: &T) -> &mut Self;
-}
-
-impl<T> AddOptionalNameValuePair<T> for MessageBuilder
-where
-    T: OptionalNameValuePair,
-{
-    fn append_name_value_pair(&mut self, name: &str, value: &T) -> &mut Self {
-        value.append_to_builder(name, self);
-
-        self
+    fn append_name_value(&mut self, name: &str, value: &T) -> &mut Self {
+        self.push_bold_safe(name).push_line_safe(value.to_string())
     }
 }
