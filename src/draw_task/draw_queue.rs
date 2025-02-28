@@ -61,7 +61,8 @@ pub async fn get_next_request(database: &Pool<Sqlite>) -> Option<DrawRequest> {
             `original_options`,
             `user_id`,
             `message_id`,
-            `channel_id`
+            `channel_id`,
+            `created_at`
         FROM `draw_requests`
         WHERE
             `user_id` = ?

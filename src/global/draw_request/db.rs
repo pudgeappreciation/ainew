@@ -1,3 +1,4 @@
+use chrono::DateTime;
 use serenity::all::{ChannelId, MessageId, UserId};
 
 use super::DrawRequest;
@@ -10,10 +11,14 @@ pub struct DbDrawRequest {
     pub user_id: i64,
     pub message_id: i64,
     pub channel_id: i64,
+    pub created_at: i64,
 }
 
 impl From<DbDrawRequest> for DrawRequest {
     fn from(value: DbDrawRequest) -> Self {
+        let created_at =
+            DateTime::from_timestamp(value.created_at, 0).expect("`created_at` value malformed");
+
         DrawRequest {
             state: value.state,
             options: serde_json::from_str(&value.options).unwrap_or_default(),
@@ -21,6 +26,7 @@ impl From<DbDrawRequest> for DrawRequest {
             user_id: UserId::new(value.user_id as u64),
             message_id: MessageId::new(value.message_id as u64),
             channel_id: ChannelId::new(value.channel_id as u64),
+            created_at,
         }
     }
 }

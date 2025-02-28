@@ -4,6 +4,7 @@ pub mod options;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use chrono::{DateTime, Utc};
 use options::Options;
 use serde::{Deserialize, Serialize};
 use serenity::all::{ChannelId, CommandInteraction, MessageId, UserId};
@@ -21,6 +22,7 @@ pub struct DrawRequest {
     pub user_id: UserId,
     pub message_id: MessageId,
     pub channel_id: ChannelId,
+    pub created_at: DateTime<Utc>,
 }
 
 impl DrawRequest {
@@ -29,6 +31,8 @@ impl DrawRequest {
         message_id: MessageId,
         profile: Option<DrawProfile>,
     ) -> DrawRequest {
+        let created_at = Utc::now();
+
         DrawRequest {
             state: String::from("queued"),
             options: Options::new_from_command(command, profile),
@@ -36,6 +40,7 @@ impl DrawRequest {
             user_id: command.user.id,
             message_id,
             channel_id: command.channel_id,
+            created_at,
         }
     }
 
