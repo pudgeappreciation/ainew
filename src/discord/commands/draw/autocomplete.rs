@@ -14,11 +14,6 @@ async fn get_options(bot: &Bot, interaction: &CommandInteraction) -> CreateAutoc
             } => return utilities::autocomplete::model(bot, interaction).await,
             ResolvedOption {
                 value: ResolvedValue::Autocomplete { kind: _, value: _ },
-                name: "size",
-                ..
-            } => return utilities::autocomplete::size(),
-            ResolvedOption {
-                value: ResolvedValue::Autocomplete { kind: _, value: _ },
                 name: "sampler",
                 ..
             } => return utilities::autocomplete::sampler(bot).await,

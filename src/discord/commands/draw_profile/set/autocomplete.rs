@@ -23,11 +23,6 @@ pub async fn autocomplete<'a>(
             } => return utilities::autocomplete::model(bot, interaction).await,
             ResolvedOption {
                 value: ResolvedValue::Autocomplete { kind: _, value: _ },
-                name: "size",
-                ..
-            } => return utilities::autocomplete::size(),
-            ResolvedOption {
-                value: ResolvedValue::Autocomplete { kind: _, value: _ },
                 name: "sampler",
                 ..
             } => return utilities::autocomplete::sampler(bot).await,

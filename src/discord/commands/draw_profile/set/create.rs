@@ -31,13 +31,10 @@ pub fn create() -> CreateCommandOption {
             "negative_prompt_tail",
             "The tokens to append to the negative prompt",
         ))
-        .add_sub_option(
-            option::string(
-                "size",
-                "The size to use, formatted as {width}x{height}, in pixels",
-            )
-            .set_autocomplete(true),
-        )
+        .add_sub_option(option::string(
+            "size",
+            "The size to use, formatted as {width}x{height}, in pixels",
+        ))
         .add_sub_option(option::string("model", "The model to use").set_autocomplete(true))
         .add_sub_option(option::number("cfg_scale", "The cfg scale to use"))
         .add_sub_option(option::int("steps", "The steps to use, default 10"))
