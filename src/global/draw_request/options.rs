@@ -147,6 +147,27 @@ impl Options {
             options.negative_prompt = profile.wrap_negative_prompt(options.negative_prompt);
         };
 
+        let pixels = options.width * options.height;
+        if let Some(Ok(max_pixels)) = dotenvy::var("MAX_PIXELS")
+            .ok()
+            .map(|max_pixels| max_pixels.parse::<u32>())
+        {
+            if pixels > max_pixels {
+                let scale = (max_pixels as f32) / (pixels as f32);
+                options.width = ((options.width as f32) * scale).floor() as u32;
+                options.height = ((options.height as f32) * scale).floor() as u32;
+            }
+        };
+
+        if let Some(Ok(max_steps)) = dotenvy::var("MAX_STEPS")
+            .ok()
+            .map(|max_steps| max_steps.parse::<u8>())
+        {
+            if options.steps > max_steps {
+                options.steps = max_steps;
+            }
+        };
+
         options
     }
 
