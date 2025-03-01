@@ -128,9 +128,9 @@ impl Options {
         let mut command = String::new();
         command
             .append_command_option("prompt_head", &self.prompt_head)
-            .append_command_option("prompt_tail", &self.prompt_head)
-            .append_command_option("negative_prompt_head", &self.prompt_head)
-            .append_command_option("negative_prompt_tail", &self.prompt_head)
+            .append_command_option("prompt_tail", &self.prompt_tail)
+            .append_command_option("negative_prompt_head", &self.negative_prompt_head)
+            .append_command_option("negative_prompt_tail", &self.negative_prompt_tail)
             .append_command_option("sampler", &self.sampler)
             .append_command_option("scheduler", &self.scheduler)
             .append_command_option("model", &self.model)

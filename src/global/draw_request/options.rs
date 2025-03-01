@@ -188,10 +188,7 @@ impl Options {
             command.append_command_option("negative_prompt", &Some(&self.negative_prompt));
         }
 
-        command.append_command_option(
-            "size",
-            &Some(format!("size:{}x{}", &self.width, &self.height)),
-        );
+        command.append_command_option("size", &Some(format!("{}x{}", &self.width, &self.height)));
 
         if !self.model.is_empty() {
             command.append_command_option("model", &Some(&self.model));
