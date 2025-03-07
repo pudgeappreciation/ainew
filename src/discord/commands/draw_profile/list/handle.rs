@@ -61,7 +61,7 @@ pub async fn handle<'a>(
 
             copy_modal::handle(
                 &ctx,
-                format!("/profile new\n{}", profile.to_command_options()),
+                format!("/profile set\n{}", profile.to_command_options()),
                 InputTextStyle::Paragraph,
                 &interaction,
             )
