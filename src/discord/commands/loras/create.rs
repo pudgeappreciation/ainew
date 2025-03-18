@@ -1,9 +1,9 @@
 use serenity::builder::CreateCommand;
 
-use crate::discord::commands::option;
+use super::list_with_images;
 
 pub fn create() -> CreateCommand {
     CreateCommand::new("loras")
-        .description("display the availible loras")
-        .add_option(option::int("page", "Jump to a specific page").min_int_value(1))
+        .description("Manage your draw settings profiles")
+        .add_option(list_with_images::create())
 }
