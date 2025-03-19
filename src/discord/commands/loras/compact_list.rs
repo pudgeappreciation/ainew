@@ -1,8 +1,6 @@
-mod compact_list;
-mod list_with_images;
-
 mod create;
 mod handle;
+mod respond;
 
 pub use create::create;
 pub use handle::handle;

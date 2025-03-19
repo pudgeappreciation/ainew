@@ -1,4 +1,4 @@
-use super::list_with_images;
+use super::{compact_list, list_with_images};
 
 use serenity::all::{CommandInteraction, Context, ResolvedOption, ResolvedValue};
 
@@ -12,6 +12,11 @@ pub async fn handle(bot: &Bot, ctx: Context, interaction: CommandInteraction) {
                 name: "images",
                 ..
             } => return list_with_images::handle(bot, &ctx, &options, &interaction).await,
+            ResolvedOption {
+                value: ResolvedValue::SubCommand(options),
+                name: "compact",
+                ..
+            } => return compact_list::handle(bot, &ctx, &options, &interaction).await,
             _ => {
                 _ = interaction
                     .create_response(

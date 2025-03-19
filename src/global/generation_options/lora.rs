@@ -94,6 +94,12 @@ impl Lora {
     }
 }
 
+impl From<&Lora> for Lora {
+    fn from(value: &Lora) -> Self {
+        value.clone()
+    }
+}
+
 impl favorites::FavoritesString for Lora {
     fn string(&self) -> String {
         self.internal_name.to_string()
