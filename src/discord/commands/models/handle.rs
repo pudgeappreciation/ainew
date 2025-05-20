@@ -13,10 +13,11 @@ use super::respond;
 pub async fn handle(bot: &Bot, ctx: Context, command: CommandInteraction) {
     respond::init(&ctx, &command).await;
 
-    let initial_page = option::get_int("page", command.data.options().iter()).unwrap_or(0) as usize;
+    let initial_page_number = option::get_int("page", command.data.options().iter()).unwrap_or(1);
+    let initial_page_index = initial_page_number - 1;
 
     let (message, mut page_index) =
-        match respond::model_page(initial_page, &bot, &ctx, &command).await {
+        match respond::model_page(initial_page_index as usize, &bot, &ctx, &command).await {
             Ok(message) => message,
             Err(err) => {
                 println!("{}", err);

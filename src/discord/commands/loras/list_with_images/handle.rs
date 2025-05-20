@@ -20,10 +20,11 @@ pub async fn handle<'a>(
 ) {
     respond::init(&ctx, &command).await;
 
-    let initial_page = option::get_int("page", options.iter()).unwrap_or(0) as usize;
+    let initial_page_number = option::get_int("page", options.iter()).unwrap_or(1) as usize;
+    let initial_page_index = initial_page_number - 1;
 
     let (message, mut page_index) =
-        match respond::lora_page(initial_page, &bot, &ctx, &command).await {
+        match respond::lora_page(initial_page_index as usize, &bot, &ctx, &command).await {
             Ok(message) => message,
             Err(err) => {
                 println!("{}", err);
